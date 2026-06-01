@@ -5,14 +5,15 @@
 @tailwind utilities;
 
 :root {
-  --atlas-cyan: #00E1FF;
-  --atlas-cyan-dim: #00B8D4;
-  --atlas-dark-bg: #081320;
-  --atlas-dark-card: #0D1E2C;
-  --atlas-copper: #FFA23A;
-  --atlas-white: #F2F2F2;
-  --atlas-deep-black: #00070F;
-  --atlas-gray-tech: #10191D;
+  --atlas-cyan: #00C8D9;
+  --atlas-cyan-dim: #009AAA;
+  --atlas-dark-bg: #0A1A26;
+  --atlas-dark-card: #111820;
+  --atlas-copper: #FF8C42;
+  --atlas-white: #FFFFFF;
+  --atlas-deep-black: #060E18;
+  --atlas-gray-tech: #111820;
+  --atlas-gray-text: #6B7280;
 }
 
 * {
@@ -37,7 +38,7 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #081320;
+  background: #0A1A26;
 }
 
 ::-webkit-scrollbar-thumb {
@@ -46,13 +47,13 @@ body {
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #00E1FF33;
+  background: rgba(0,200,217,0.2);
 }
 
 /* Seleção de texto */
 ::selection {
-  background: rgba(0, 225, 255, 0.2);
-  color: #00E1FF;
+  background: rgba(0, 200, 217, 0.2);
+  color: #00C8D9;
 }
 
 /* Curvas de nível no fundo - padrão decorativo */
@@ -66,8 +67,8 @@ body {
   position: absolute;
   inset: 0;
   background-image:
-    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(0, 225, 255, 0.08) 0%, transparent 60%),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='600'%3E%3Cellipse cx='300' cy='300' rx='280' ry='180' fill='none' stroke='%2300E1FF' stroke-width='0.4' opacity='0.04'/%3E%3Cellipse cx='300' cy='300' rx='240' ry='150' fill='none' stroke='%2300E1FF' stroke-width='0.4' opacity='0.04'/%3E%3Cellipse cx='300' cy='300' rx='200' ry='120' fill='none' stroke='%2300E1FF' stroke-width='0.4' opacity='0.04'/%3E%3Cellipse cx='300' cy='300' rx='160' ry='90' fill='none' stroke='%2300E1FF' stroke-width='0.4' opacity='0.04'/%3E%3Cellipse cx='300' cy='300' rx='120' ry='60' fill='none' stroke='%2300E1FF' stroke-width='0.4' opacity='0.04'/%3E%3Cellipse cx='300' cy='300' rx='80' ry='35' fill='none' stroke='%2300E1FF' stroke-width='0.4' opacity='0.04'/%3E%3C/svg%3E");
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(0,200,217,0.08) 0%, transparent 60%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='600'%3E%3Cellipse cx='300' cy='300' rx='280' ry='180' fill='none' stroke='%2300C8D9' stroke-width='0.4' opacity='0.05'/%3E%3Cellipse cx='300' cy='300' rx='240' ry='150' fill='none' stroke='%2300C8D9' stroke-width='0.4' opacity='0.05'/%3E%3Cellipse cx='300' cy='300' rx='200' ry='120' fill='none' stroke='%2300C8D9' stroke-width='0.4' opacity='0.05'/%3E%3Cellipse cx='300' cy='300' rx='160' ry='90' fill='none' stroke='%2300C8D9' stroke-width='0.4' opacity='0.05'/%3E%3Cellipse cx='300' cy='300' rx='120' ry='60' fill='none' stroke='%2300C8D9' stroke-width='0.4' opacity='0.05'/%3E%3Cellipse cx='300' cy='300' rx='80' ry='35' fill='none' stroke='%2300C8D9' stroke-width='0.4' opacity='0.05'/%3E%3C/svg%3E");
   background-size: cover, 600px 600px;
   pointer-events: none;
   z-index: 0;
@@ -80,23 +81,23 @@ body {
 
 /* Card com borda ciano */
 .atlas-card {
-  background: linear-gradient(135deg, #0D1E2C 0%, #081320 100%);
-  border: 1px solid rgba(0, 225, 255, 0.2);
+  background: linear-gradient(135deg, #111820 0%, #0A1A26 100%);
+  border: 1px solid rgba(0, 200, 217, 0.2);
   border-radius: 8px;
   transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 .atlas-card:hover {
-  border-color: rgba(0, 225, 255, 0.45);
-  box-shadow: 0 0 20px rgba(0, 225, 255, 0.12), 0 4px 24px rgba(0, 0, 0, 0.4);
+  border-color: rgba(0, 200, 217, 0.45);
+  box-shadow: 0 0 20px rgba(0, 200, 217, 0.12), 0 4px 24px rgba(0, 0, 0, 0.4);
 }
 
 /* Input estilo Atlas */
 .atlas-input {
   background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(0, 225, 255, 0.2);
+  border: 1px solid rgba(0, 200, 217, 0.2);
   border-radius: 6px;
-  color: #F2F2F2;
+  color: #FFFFFF;
   font-family: 'Montserrat', sans-serif;
   transition: border-color 0.2s, box-shadow 0.2s;
   outline: none;
@@ -105,22 +106,22 @@ body {
 }
 
 .atlas-input:focus {
-  border-color: rgba(0, 225, 255, 0.6);
-  box-shadow: 0 0 0 3px rgba(0, 225, 255, 0.08);
+  border-color: rgba(0, 200, 217, 0.6);
+  box-shadow: 0 0 0 3px rgba(0, 200, 217, 0.08);
 }
 
 .atlas-input::placeholder {
-  color: rgba(139, 163, 181, 0.6);
+  color: #6B7280;
 }
 
 /* Botão primário ciano */
 .btn-atlas-primary {
-  background: linear-gradient(135deg, #00B8D4 0%, #00E1FF 100%);
-  color: #081320;
+  background: linear-gradient(135deg, #009AAA 0%, #00C8D9 100%);
+  color: #0A1A26;
   font-family: 'Montserrat', sans-serif;
   font-weight: 700;
   font-size: 0.875rem;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
   padding: 10px 24px;
   border-radius: 6px;
   border: none;
@@ -131,7 +132,7 @@ body {
 
 .btn-atlas-primary:hover {
   opacity: 0.9;
-  box-shadow: 0 0 20px rgba(0, 225, 255, 0.3);
+  box-shadow: 0 0 20px rgba(0, 200, 217, 0.35);
 }
 
 .btn-atlas-primary:active {
@@ -146,28 +147,28 @@ body {
 /* Botão secundário outline ciano */
 .btn-atlas-outline {
   background: transparent;
-  color: #00E1FF;
+  color: #00C8D9;
   font-family: 'Montserrat', sans-serif;
   font-weight: 600;
   font-size: 0.875rem;
   letter-spacing: 0.04em;
   padding: 9px 22px;
   border-radius: 6px;
-  border: 1px solid rgba(0, 225, 255, 0.4);
+  border: 1px solid rgba(0, 200, 217, 0.4);
   cursor: pointer;
   transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
 }
 
 .btn-atlas-outline:hover {
-  border-color: #00E1FF;
-  background: rgba(0, 225, 255, 0.08);
-  box-shadow: 0 0 12px rgba(0, 225, 255, 0.15);
+  border-color: #00C8D9;
+  background: rgba(0, 200, 217, 0.08);
+  box-shadow: 0 0 12px rgba(0, 200, 217, 0.15);
 }
 
 /* Botão copper/destaque */
 .btn-atlas-copper {
-  background: linear-gradient(135deg, #CC7A1A 0%, #FFA23A 100%);
-  color: #081320;
+  background: linear-gradient(135deg, #CC6A20 0%, #FF8C42 100%);
+  color: #0A1A26;
   font-family: 'Montserrat', sans-serif;
   font-weight: 700;
   font-size: 0.875rem;
@@ -182,7 +183,7 @@ body {
 
 .btn-atlas-copper:hover {
   opacity: 0.9;
-  box-shadow: 0 0 16px rgba(255, 162, 58, 0.3);
+  box-shadow: 0 0 16px rgba(255, 140, 66, 0.3);
 }
 
 /* Botão danger */
@@ -214,7 +215,7 @@ body {
   font-family: 'Montserrat', sans-serif;
   font-size: 0.875rem;
   font-weight: 500;
-  color: #8BA3B5;
+  color: #6B7280;
   text-decoration: none;
   transition: color 0.2s, background 0.2s;
   cursor: pointer;
@@ -225,14 +226,14 @@ body {
 }
 
 .sidebar-link:hover {
-  color: #F2F2F2;
-  background: rgba(0, 225, 255, 0.06);
+  color: #FFFFFF;
+  background: rgba(0, 200, 217, 0.06);
 }
 
 .sidebar-link.active {
-  color: #00E1FF;
-  background: rgba(0, 225, 255, 0.1);
-  border-left: 2px solid #00E1FF;
+  color: #00C8D9;
+  background: rgba(0, 200, 217, 0.1);
+  border-left: 2px solid #00C8D9;
 }
 
 /* Tab ativa */
@@ -242,7 +243,7 @@ body {
   font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: 0.04em;
-  color: #8BA3B5;
+  color: #6B7280;
   border-bottom: 2px solid transparent;
   cursor: pointer;
   transition: color 0.2s, border-color 0.2s;
@@ -255,20 +256,20 @@ body {
 }
 
 .atlas-tab:hover {
-  color: #F2F2F2;
-  border-bottom-color: rgba(0, 225, 255, 0.3);
+  color: #FFFFFF;
+  border-bottom-color: rgba(0, 200, 217, 0.3);
 }
 
 .atlas-tab.active {
-  color: #00E1FF;
-  border-bottom-color: #00E1FF;
+  color: #00C8D9;
+  border-bottom-color: #00C8D9;
 }
 
 /* Badge de status */
 .badge-active {
-  background: rgba(0, 225, 255, 0.12);
-  color: #00E1FF;
-  border: 1px solid rgba(0, 225, 255, 0.3);
+  background: rgba(0, 200, 217, 0.12);
+  color: #00C8D9;
+  border: 1px solid rgba(0, 200, 217, 0.3);
   padding: 2px 10px;
   border-radius: 20px;
   font-size: 0.7rem;
@@ -278,9 +279,9 @@ body {
 }
 
 .badge-inactive {
-  background: rgba(139, 163, 181, 0.1);
-  color: #8BA3B5;
-  border: 1px solid rgba(139, 163, 181, 0.2);
+  background: rgba(107, 114, 128, 0.1);
+  color: #6B7280;
+  border: 1px solid rgba(107, 114, 128, 0.2);
   padding: 2px 10px;
   border-radius: 20px;
   font-size: 0.7rem;
@@ -292,13 +293,13 @@ body {
 /* Linha divisória */
 .atlas-divider {
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(0, 225, 255, 0.2), transparent);
+  background: linear-gradient(90deg, transparent, rgba(0, 200, 217, 0.2), transparent);
   margin: 16px 0;
 }
 
 /* Glow no texto */
 .text-glow-cyan {
-  text-shadow: 0 0 20px rgba(0, 225, 255, 0.5);
+  text-shadow: 0 0 20px rgba(0, 200, 217, 0.5);
 }
 
 /* Animação de entrada */
@@ -336,9 +337,9 @@ body {
 }
 
 .atlas-toast.success {
-  background: rgba(0, 225, 255, 0.1);
-  border: 1px solid rgba(0, 225, 255, 0.3);
-  color: #00E1FF;
+  background: rgba(0, 200, 217, 0.1);
+  border: 1px solid rgba(0, 200, 217, 0.3);
+  color: #00C8D9;
 }
 
 .atlas-toast.error {
@@ -361,26 +362,26 @@ table.atlas-table {
 }
 
 table.atlas-table th {
-  background: rgba(0, 225, 255, 0.06);
-  color: #00E1FF;
+  background: rgba(0, 200, 217, 0.06);
+  color: #00C8D9;
   font-weight: 600;
   font-size: 0.75rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   padding: 12px 16px;
   text-align: left;
-  border-bottom: 1px solid rgba(0, 225, 255, 0.15);
+  border-bottom: 1px solid rgba(0, 200, 217, 0.15);
 }
 
 table.atlas-table td {
   padding: 12px 16px;
-  border-bottom: 1px solid rgba(0, 225, 255, 0.07);
-  color: #F2F2F2;
+  border-bottom: 1px solid rgba(0, 200, 217, 0.07);
+  color: #FFFFFF;
   vertical-align: middle;
 }
 
 table.atlas-table tr:hover td {
-  background: rgba(0, 225, 255, 0.03);
+  background: rgba(0, 200, 217, 0.03);
 }
 
 /* Label */
@@ -391,6 +392,6 @@ table.atlas-table tr:hover td {
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: #8BA3B5;
+  color: #6B7280;
   margin-bottom: 6px;
 }
