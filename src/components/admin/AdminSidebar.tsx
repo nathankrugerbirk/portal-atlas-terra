@@ -62,8 +62,8 @@ export function AdminSidebar({ onClose }: { onClose?: () => void }) {
       {/* Logo */}
       <div className="px-5 pt-6 pb-5">
         <Link href="/admin" onClick={onClose}>
-          <Image src="/logo.svg" alt="Atlas Terra" width={175} height={44} priority
-            style={{ filter: "drop-shadow(0 0 10px rgba(0,230,255,0.15))" }}
+          <Image src="/logo-brand.png" alt="Atlas Terra" width={175} height={88} priority
+            style={{ objectFit: "contain", filter: "drop-shadow(0 0 10px rgba(0,230,255,0.15))" }}
           />
         </Link>
         <p style={{

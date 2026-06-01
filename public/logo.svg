@@ -1,34 +1,33 @@
-<svg viewBox="0 0 220 60" xmlns="http://www.w3.org/2000/svg" fill="none">
+<svg viewBox="0 0 320 55" xmlns="http://www.w3.org/2000/svg" fill="none">
 
-  <!-- Monograma AT -->
-  <!-- A em ciano -->
-  <polygon points="8,50 20,14 32,50 28,50 20,26 12,50" fill="#00E6FF"/>
-  <!-- barra central do A com corte diagonal -->
-  <polygon points="13.5,37 26.5,37 25,31 15,31" fill="#00E6FF"/>
-
-  <!-- T em branco com corte diagonal no canto superior direito -->
-  <polygon points="34,18 55,18 55,14 34,14" fill="#F6F8FA"/>
-  <rect x="42" y="18" width="5" height="32" fill="#F6F8FA"/>
-  <!-- corte diagonal sutil -->
-  <polygon points="51,14 57,14 57,20" fill="#0D1117"/>
-
-  <!-- Separador vertical -->
-  <line x1="68" y1="10" x2="68" y2="50" stroke="rgba(0,230,255,0.2)" stroke-width="1"/>
-
-  <!-- Wordmark: ATLAS -->
-  <text x="78" y="36"
-    font-family="'Exo 2', Rajdhani, Orbitron, sans-serif"
+  <!-- ATLAS em ciano -->
+  <text
+    x="0" y="40"
+    font-family="'Exo 2', Rajdhani, Orbitron, Arial, sans-serif"
     font-weight="700"
-    font-size="22"
-    letter-spacing="4"
-    fill="#00E6FF">ATLAS</text>
+    font-size="42"
+    letter-spacing="3"
+    fill="#00E6FF"
+  >ATLAS</text>
 
-  <!-- Wordmark: TERRA -->
-  <text x="78" y="54"
-    font-family="'Exo 2', Rajdhani, Orbitron, sans-serif"
-    font-weight="400"
-    font-size="12"
-    letter-spacing="6"
-    fill="#F6F8FA">TERRA</text>
+  <!-- Espaço + TERRA em branco -->
+  <text
+    x="178" y="40"
+    font-family="'Exo 2', Rajdhani, Orbitron, Arial, sans-serif"
+    font-weight="700"
+    font-size="42"
+    letter-spacing="3"
+    fill="#F6F8FA"
+  >TERRA</text>
+
+  <!-- Tagline -->
+  <text
+    x="1" y="54"
+    font-family="'Exo 2', Rajdhani, Orbitron, Arial, sans-serif"
+    font-weight="300"
+    font-size="8"
+    letter-spacing="3.5"
+    fill="rgba(139,148,158,0.75)"
+  >SEE THE WORLD.  BUILD THE FUTURE.</text>
 
 </svg>

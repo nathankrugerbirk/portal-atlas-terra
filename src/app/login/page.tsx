@@ -2,83 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 
-/* ── Logo 3 camadas (exclusiva da tela de login) ───────────────────── */
-function AtlasLogoComplex() {
-  return (
-    <div className="animate-float" style={{ width: 200, height: 160, position: "relative", margin: "0 auto" }}>
-      <svg
-        viewBox="0 0 200 160"
-        xmlns="http://www.w3.org/2000/svg"
-        style={{ width: "100%", height: "100%", filter: "drop-shadow(0 0 14px rgba(0,230,255,0.35))" }}
-      >
-        {/* ── Camada inferior: mapa topográfico ── */}
-        <g transform="translate(20, 95) skewX(-20) skewY(8) scale(1, 0.55)">
-          <rect x="0" y="0" width="160" height="100" rx="2" fill="#1A1F24" stroke="#2B3138" strokeWidth="1"/>
-          {/* Curvas topográficas */}
-          <ellipse cx="80" cy="50" rx="72" ry="42" fill="none" stroke="#2B3138" strokeWidth="0.8"/>
-          <ellipse cx="80" cy="50" rx="56" ry="32" fill="none" stroke="#2B3138" strokeWidth="0.8"/>
-          <ellipse cx="80" cy="50" rx="40" ry="22" fill="none" stroke="#2B3138" strokeWidth="0.8"/>
-          <ellipse cx="80" cy="50" rx="24" ry="13" fill="none" stroke="#2B3138" strokeWidth="0.8"/>
-          <ellipse cx="80" cy="50" rx="10" ry="6"  fill="none" stroke="#3A3F44" strokeWidth="0.7"/>
-        </g>
-
-        {/* ── Camada do meio: grid iluminado ── */}
-        <g transform="translate(12, 62) skewX(-20) skewY(8) scale(1, 0.55)">
-          <rect x="0" y="0" width="160" height="100" rx="2"
-            fill="rgba(0,153,170,0.18)" stroke="#00E6FF" strokeWidth="1.2"/>
-          {/* Grid horizontal */}
-          {[20,40,60,80].map(y => (
-            <line key={y} x1="0" y1={y} x2="160" y2={y} stroke="rgba(0,230,255,0.2)" strokeWidth="0.6"/>
-          ))}
-          {/* Grid vertical */}
-          {[32,64,96,128].map(x => (
-            <line key={x} x1={x} y1="0" x2={x} y2="100" stroke="rgba(0,230,255,0.2)" strokeWidth="0.6"/>
-          ))}
-          {/* Brilho nas bordas */}
-          <rect x="0" y="0" width="160" height="100" rx="2"
-            fill="none" stroke="rgba(0,230,255,0.6)" strokeWidth="0.5"/>
-        </g>
-
-        {/* ── Camada superior: mapa-múndi em pontos ── */}
-        <g transform="translate(4, 28) skewX(-20) skewY(8) scale(1, 0.55)">
-          <rect x="0" y="0" width="160" height="100" rx="2"
-            fill="rgba(13,17,23,0.92)" stroke="#0099AA" strokeWidth="1"/>
-          {/* Pontos do mapa-múndi */}
-          {[
-            [20,30],[28,28],[36,26],[44,28],[52,26],[60,28],[68,26],[76,28],[84,26],[92,28],
-            [100,26],[108,28],[116,26],[124,28],[132,26],[140,28],[148,30],
-            [16,38],[24,36],[32,34],[40,36],[48,34],[56,36],[64,34],[72,36],[80,34],
-            [88,36],[96,34],[104,36],[112,34],[120,36],[128,34],[136,36],[144,34],[152,36],
-            [20,46],[28,44],[36,42],[44,44],[52,42],[60,44],[68,42],[76,44],[84,42],
-            [92,44],[100,42],[108,44],[116,42],[124,44],[132,42],[140,44],[148,42],
-            [24,54],[32,52],[40,54],[48,52],[56,54],[64,52],[72,54],[80,52],[88,54],
-            [96,52],[104,54],[112,52],[120,54],[128,52],[136,54],[144,52],
-            [28,62],[36,60],[44,62],[52,60],[60,62],[68,60],[76,62],[84,60],[92,62],
-            [100,60],[108,62],[116,60],[124,62],[132,60],[140,62],
-            [32,70],[40,68],[48,70],[56,68],[64,70],[72,68],[80,70],[88,68],[96,70],
-            [104,68],[112,70],[120,68],[128,70],[136,68],
-          ].map(([cx, cy], i) => (
-            <circle key={i} cx={cx} cy={cy} r="1.2" fill="rgba(246,248,250,0.35)"/>
-          ))}
-          {/* Pins / marcadores com brilho ciano */}
-          {[[40,40],[80,32],[120,38],[60,58],[100,50]].map(([cx,cy], i) => (
-            <g key={i}>
-              <circle cx={cx} cy={cy} r="3.5" fill="#00E6FF" opacity="0.9"/>
-              <circle cx={cx} cy={cy} r="6" fill="none" stroke="#00E6FF" strokeWidth="0.8" opacity="0.4"/>
-              <line x1={cx} y1={cy} x2={cx} y2={cy - 14} stroke="#00E6FF" strokeWidth="0.8" opacity="0.7"/>
-            </g>
-          ))}
-          <rect x="0" y="0" width="160" height="100" rx="2"
-            fill="none" stroke="#0099AA" strokeWidth="0.5"/>
-        </g>
-      </svg>
-    </div>
-  );
-}
-
-/* ── Página de login ────────────────────────────────────────────────── */
 export default function LoginPage() {
   const router = useRouter();
   const [username, setUsername] = useState("");
@@ -124,101 +50,120 @@ export default function LoginPage() {
 
   return (
     <div
-      className="min-h-screen flex items-center justify-center relative overflow-hidden contour-bg"
-      style={{ background: "var(--color-bg-deep)" }}
+      className="min-h-screen flex items-center justify-center relative overflow-hidden"
+      style={{ background: "#05080C" }}
     >
+      {/* ── Curvas de nível topográficas (SVG fullscreen) ── */}
+      <svg
+        className="absolute inset-0 w-full h-full pointer-events-none"
+        style={{ opacity: 0.07 }}
+        preserveAspectRatio="xMidYMid slice"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        {/* Família de elipses concêntricas — grupo central */}
+        <ellipse cx="50%" cy="48%" rx="46%" ry="30%" fill="none" stroke="#00E6FF" strokeWidth="0.7"/>
+        <ellipse cx="50%" cy="48%" rx="40%" ry="25%" fill="none" stroke="#00E6FF" strokeWidth="0.7"/>
+        <ellipse cx="50%" cy="48%" rx="34%" ry="21%" fill="none" stroke="#00E6FF" strokeWidth="0.7"/>
+        <ellipse cx="50%" cy="48%" rx="28%" ry="17%" fill="none" stroke="#00E6FF" strokeWidth="0.7"/>
+        <ellipse cx="50%" cy="48%" rx="22%" ry="13%" fill="none" stroke="#00E6FF" strokeWidth="0.7"/>
+        <ellipse cx="50%" cy="48%" rx="16%" ry="9%"  fill="none" stroke="#00E6FF" strokeWidth="0.7"/>
+        <ellipse cx="50%" cy="48%" rx="10%" ry="5.5%"fill="none" stroke="#00E6FF" strokeWidth="0.7"/>
+        <ellipse cx="50%" cy="48%" rx="5%"  ry="2.5%"fill="none" stroke="#00E6FF" strokeWidth="0.6"/>
+        {/* Grupo secundário — canto inferior esquerdo */}
+        <ellipse cx="12%" cy="82%" rx="22%" ry="15%" fill="none" stroke="#00E6FF" strokeWidth="0.5"/>
+        <ellipse cx="12%" cy="82%" rx="16%" ry="10%" fill="none" stroke="#00E6FF" strokeWidth="0.5"/>
+        <ellipse cx="12%" cy="82%" rx="10%" ry="6%"  fill="none" stroke="#00E6FF" strokeWidth="0.5"/>
+        {/* Grupo terciário — canto superior direito */}
+        <ellipse cx="88%" cy="18%" rx="20%" ry="14%" fill="none" stroke="#00E6FF" strokeWidth="0.5"/>
+        <ellipse cx="88%" cy="18%" rx="14%" ry="9%"  fill="none" stroke="#00E6FF" strokeWidth="0.5"/>
+        <ellipse cx="88%" cy="18%" rx="8%"  ry="5%"  fill="none" stroke="#00E6FF" strokeWidth="0.5"/>
+        {/* Linhas de cota horizontais */}
+        <line x1="0" y1="25%" x2="100%" y2="25%" stroke="#00E6FF" strokeWidth="0.3" strokeDasharray="6 18"/>
+        <line x1="0" y1="50%" x2="100%" y2="50%" stroke="#00E6FF" strokeWidth="0.3" strokeDasharray="6 18"/>
+        <line x1="0" y1="75%" x2="100%" y2="75%" stroke="#00E6FF" strokeWidth="0.3" strokeDasharray="6 18"/>
+      </svg>
+
       {/* Dot grid */}
       <div className="absolute inset-0 pointer-events-none" style={{
         backgroundImage: "radial-gradient(circle, rgba(0,230,255,0.025) 1px, transparent 1px)",
-        backgroundSize: "24px 24px",
+        backgroundSize: "26px 26px",
       }}/>
 
-      {/* Glow radial superior */}
+      {/* Brilho radial topo */}
       <div className="absolute pointer-events-none" style={{
-        top: "-5%", left: "50%", transform: "translateX(-50%)",
-        width: "600px", height: "300px",
-        background: "radial-gradient(ellipse at center, rgba(0,230,255,0.08) 0%, transparent 70%)",
+        top: "-8%", left: "50%", transform: "translateX(-50%)",
+        width: "700px", height: "350px",
+        background: "radial-gradient(ellipse at center, rgba(0,230,255,0.07) 0%, transparent 70%)",
       }}/>
 
-      {/* Card de login */}
+      {/* ── Card de login ── */}
       <div className="relative z-10 w-full animate-slide-up" style={{ maxWidth: 420, padding: "0 24px" }}>
         <div style={{
-          background: "var(--color-bg-card)",
-          border: "1px solid var(--color-bg-elevated)",
+          background: "rgba(26,31,36,0.97)",
+          backdropFilter: "blur(16px)",
+          border: "1px solid rgba(0,230,255,0.15)",
           borderRadius: "8px",
-          padding: "48px 40px",
-          boxShadow: "0 0 40px rgba(0,230,255,0.08), 0 24px 64px rgba(0,0,0,0.6)",
+          padding: "44px 40px 40px",
+          boxShadow: "0 0 60px rgba(0,230,255,0.07), 0 32px 80px rgba(0,0,0,0.7)",
         }}>
 
-          {/* Logo 3 camadas */}
-          <AtlasLogoComplex />
-
-          {/* Título */}
-          <div className="text-center mt-6 mb-6">
-            <h1 style={{
-              fontFamily: "var(--font-main)",
-              fontWeight: 600,
-              fontSize: "1.4rem",
-              letterSpacing: "0.15em",
-              textTransform: "uppercase",
-              color: "var(--color-text-primary)",
-            }}>
-              ATLAS TERRA
-            </h1>
-            <p style={{
-              fontFamily: "var(--font-main)",
-              fontSize: "0.7rem",
-              letterSpacing: "0.1em",
-              color: "var(--color-text-muted)",
-              marginTop: "4px",
-              textTransform: "uppercase",
-            }}>
-              See the World. Build the Future.
-            </p>
+          {/* Logo oficial */}
+          <div className="flex justify-center mb-6 animate-float">
+            <Image
+              src="/logo-brand.png"
+              alt="Atlas Terra"
+              width={260}
+              height={130}
+              priority
+              style={{
+                objectFit: "contain",
+                filter: "drop-shadow(0 0 18px rgba(0,230,255,0.2))",
+                borderRadius: "4px",
+              }}
+            />
           </div>
 
           {/* Separador com glow */}
           <div style={{
             height: "1px",
-            background: "linear-gradient(90deg, transparent, var(--color-secondary), transparent)",
-            boxShadow: "0 0 8px rgba(0,153,170,0.4)",
+            background: "linear-gradient(90deg, transparent, rgba(0,153,170,0.6), transparent)",
+            boxShadow: "0 0 8px rgba(0,153,170,0.3)",
             marginBottom: "28px",
           }}/>
+
+          {/* Tag acesso restrito */}
+          <p style={{
+            fontFamily: "var(--font-main)",
+            fontSize: "9px",
+            fontWeight: 600,
+            letterSpacing: "0.2em",
+            textTransform: "uppercase",
+            color: "rgba(139,148,158,0.5)",
+            textAlign: "center",
+            marginBottom: "24px",
+          }}>
+            ÁREA PRIVADA — ACESSO RESTRITO
+          </p>
 
           {/* Formulário */}
           <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
 
-            {/* Usuário */}
             <div>
               <label style={{
-                display: "block",
-                fontFamily: "var(--font-main)",
-                fontSize: "0.65rem",
-                fontWeight: 600,
-                letterSpacing: "0.1em",
-                textTransform: "uppercase",
-                color: "var(--color-text-muted)",
-                marginBottom: "6px",
+                display: "block", fontFamily: "var(--font-main)", fontSize: "0.65rem",
+                fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase",
+                color: "var(--color-text-muted)", marginBottom: "6px",
               }}>Usuário</label>
               <input
-                type="text"
-                autoComplete="username"
-                placeholder="Digite seu usuário"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                required
-                disabled={loading}
+                type="text" autoComplete="username" placeholder="Digite seu usuário"
+                value={username} onChange={(e) => setUsername(e.target.value)}
+                required disabled={loading}
                 style={{
-                  width: "100%",
-                  background: "var(--color-bg-elevated)",
-                  border: "1px solid var(--color-surface)",
-                  borderRadius: "4px",
-                  padding: "11px 14px",
-                  color: "var(--color-text-primary)",
-                  fontFamily: "var(--font-main)",
-                  fontSize: "0.9rem",
-                  outline: "none",
-                  transition: "border-color 0.2s, box-shadow 0.2s",
+                  width: "100%", background: "var(--color-bg-elevated)",
+                  border: "1px solid var(--color-surface)", borderRadius: "4px",
+                  padding: "11px 14px", color: "var(--color-text-primary)",
+                  fontFamily: "var(--font-main)", fontSize: "0.9rem",
+                  outline: "none", transition: "border-color 0.2s, box-shadow 0.2s",
                 }}
                 onFocus={(e) => {
                   e.target.style.borderColor = "var(--color-primary)";
@@ -231,37 +176,22 @@ export default function LoginPage() {
               />
             </div>
 
-            {/* Senha */}
             <div>
               <label style={{
-                display: "block",
-                fontFamily: "var(--font-main)",
-                fontSize: "0.65rem",
-                fontWeight: 600,
-                letterSpacing: "0.1em",
-                textTransform: "uppercase",
-                color: "var(--color-text-muted)",
-                marginBottom: "6px",
+                display: "block", fontFamily: "var(--font-main)", fontSize: "0.65rem",
+                fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase",
+                color: "var(--color-text-muted)", marginBottom: "6px",
               }}>Senha</label>
               <input
-                type="password"
-                autoComplete="current-password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                disabled={loading}
+                type="password" autoComplete="current-password" placeholder="••••••••"
+                value={password} onChange={(e) => setPassword(e.target.value)}
+                required disabled={loading}
                 style={{
-                  width: "100%",
-                  background: "var(--color-bg-elevated)",
-                  border: "1px solid var(--color-surface)",
-                  borderRadius: "4px",
-                  padding: "11px 14px",
-                  color: "var(--color-text-primary)",
-                  fontFamily: "var(--font-main)",
-                  fontSize: "0.9rem",
-                  outline: "none",
-                  transition: "border-color 0.2s, box-shadow 0.2s",
+                  width: "100%", background: "var(--color-bg-elevated)",
+                  border: "1px solid var(--color-surface)", borderRadius: "4px",
+                  padding: "11px 14px", color: "var(--color-text-primary)",
+                  fontFamily: "var(--font-main)", fontSize: "0.9rem",
+                  outline: "none", transition: "border-color 0.2s, box-shadow 0.2s",
                 }}
                 onFocus={(e) => {
                   e.target.style.borderColor = "var(--color-primary)";
@@ -274,40 +204,24 @@ export default function LoginPage() {
               />
             </div>
 
-            {/* Erro */}
             {error && (
               <div style={{
-                background: "rgba(248,81,73,0.08)",
-                border: "1px solid rgba(248,81,73,0.25)",
-                borderRadius: "4px",
-                padding: "10px 14px",
-                color: "#f85149",
-                fontFamily: "var(--font-main)",
-                fontSize: "0.82rem",
-              }}>
-                {error}
-              </div>
+                background: "rgba(248,81,73,0.08)", border: "1px solid rgba(248,81,73,0.25)",
+                borderRadius: "4px", padding: "10px 14px", color: "#f85149",
+                fontFamily: "var(--font-main)", fontSize: "0.82rem",
+              }}>{error}</div>
             )}
 
-            {/* Botão */}
             <button
-              type="submit"
-              disabled={loading}
+              type="submit" disabled={loading}
               style={{
                 width: "100%",
                 background: loading ? "rgba(0,230,255,0.3)" : "var(--color-primary)",
-                color: "var(--color-bg-deep)",
-                fontFamily: "var(--font-main)",
-                fontWeight: 700,
-                fontSize: "0.78rem",
-                letterSpacing: "0.12em",
-                textTransform: "uppercase",
-                padding: "12px 24px",
-                borderRadius: "4px",
-                border: "none",
-                cursor: loading ? "not-allowed" : "pointer",
-                marginTop: "4px",
-                transition: "background 0.2s, box-shadow 0.2s",
+                color: "var(--color-bg-deep)", fontFamily: "var(--font-main)",
+                fontWeight: 700, fontSize: "0.78rem", letterSpacing: "0.12em",
+                textTransform: "uppercase", padding: "12px 24px", borderRadius: "4px",
+                border: "none", cursor: loading ? "not-allowed" : "pointer",
+                marginTop: "4px", transition: "background 0.2s, box-shadow 0.2s",
               }}
               onMouseEnter={(e) => {
                 if (!loading) {
@@ -335,12 +249,9 @@ export default function LoginPage() {
           </form>
         </div>
 
-        {/* Rodapé */}
         <p className="text-center mt-5" style={{
-          fontFamily: "var(--font-main)",
-          fontSize: "0.65rem",
-          letterSpacing: "0.06em",
-          color: "rgba(139,148,158,0.4)",
+          fontFamily: "var(--font-main)", fontSize: "0.65rem",
+          letterSpacing: "0.06em", color: "rgba(139,148,158,0.35)",
         }}>
           © 2026 Atlas Terra — Geotecnologia, dados e inteligência territorial
         </p>
