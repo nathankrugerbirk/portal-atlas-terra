@@ -311,100 +311,227 @@ function ModelSection({ type, model, onSave }: { type: "3d" | "2d"; model: any; 
 function AreaTableSection({ rows, onSave, onDelete }: any) {
   const [editingRow, setEditingRow] = useState<any>(null);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ class_name: "", area_ha: "", area_alq: "", percentage: "" });
+  const [className, setClassName] = useState("");
+  const [areaHaInput, setAreaHaInput] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
+  // Totais calculados a partir dos dados reais
+  const totalHa = rows.reduce((s: number, r: any) => s + (r.area_ha || 0), 0);
+  const totalAlq = totalHa / 2.42;
+
   function startEdit(row: any) {
-    setForm({ class_name: row.class_name, area_ha: row.area_ha, area_alq: row.area_alq, percentage: row.percentage });
-    setEditingRow(row); setShowForm(true);
+    setClassName(row.class_name);
+    setAreaHaInput(String(row.area_ha ?? ""));
+    setEditingRow(row);
+    setShowForm(true);
   }
 
   function startNew() {
-    setForm({ class_name: "", area_ha: "", area_alq: "", percentage: "" });
-    setEditingRow(null); setShowForm(true);
+    setClassName("");
+    setAreaHaInput("");
+    setEditingRow(null);
+    setShowForm(true);
+  }
+
+  function cancel() {
+    setShowForm(false);
+    setClassName("");
+    setAreaHaInput("");
+    setEditingRow(null);
   }
 
   async function handleSave() {
+    const ha = parseFloat(areaHaInput);
+    if (!className.trim() || isNaN(ha) || ha <= 0) return;
+    const alq = ha / 2.42;
+    // Percentual salvo como 0 — calculado dinamicamente na exibição
     await onSave({
-      id: editingRow?.id, class_name: form.class_name,
-      area_ha: parseFloat(form.area_ha), area_alq: parseFloat(form.area_alq),
-      percentage: parseFloat(form.percentage)
+      id: editingRow?.id,
+      class_name: className.trim(),
+      area_ha: parseFloat(ha.toFixed(2)),
+      area_alq: parseFloat(alq.toFixed(2)),
+      percentage: 0,
     });
-    setShowForm(false);
+    cancel();
   }
 
-  const totalHa = rows.reduce((s: number, r: any) => s + r.area_ha, 0);
+  // Preview ao vivo no formulário
+  const previewHa = parseFloat(areaHaInput) || 0;
+  const previewAlq = previewHa / 2.42;
 
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h3 className="font-orbitron font-semibold text-sm uppercase tracking-widest" style={{ color: "#00E1FF" }}>Quadro de Áreas</h3>
+        <h3 className="font-orbitron font-semibold text-sm uppercase tracking-widest" style={{ color: "#00E6FF" }}>
+          Quadro de Áreas
+        </h3>
         <button onClick={startNew} className="btn-atlas-primary text-sm px-4 py-2">+ Adicionar linha</button>
       </div>
 
+      {/* ── Formulário ── */}
       {showForm && (
-        <div className="atlas-card p-5 mb-5 max-w-lg animate-slide-up">
-          <h4 className="font-montserrat font-semibold text-sm mb-4" style={{ color: "#F2F2F2" }}>
+        <div className="atlas-card p-5 mb-5 animate-slide-up" style={{ maxWidth: 520 }}>
+          <h4 className="font-montserrat font-semibold text-sm mb-4" style={{ color: "#F6F8FA" }}>
             {editingRow ? "Editar linha" : "Nova linha"}
           </h4>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="col-span-2"><label className="atlas-label">Classe / Categoria</label>
-              <input value={form.class_name} onChange={(e) => setForm(p => ({...p, class_name: e.target.value}))} className="atlas-input" placeholder="Ex: Pastagem" /></div>
-            <div><label className="atlas-label">Área (ha)</label>
-              <input type="number" step="0.01" value={form.area_ha} onChange={(e) => setForm(p => ({...p, area_ha: e.target.value}))} className="atlas-input" /></div>
-            <div><label className="atlas-label">Área (alq)</label>
-              <input type="number" step="0.01" value={form.area_alq} onChange={(e) => setForm(p => ({...p, area_alq: e.target.value}))} className="atlas-input" /></div>
-            <div><label className="atlas-label">Percentual (%)</label>
-              <input type="number" step="0.1" value={form.percentage} onChange={(e) => setForm(p => ({...p, percentage: e.target.value}))} className="atlas-input" /></div>
+
+          <div className="space-y-4">
+            {/* Classe */}
+            <div>
+              <label className="atlas-label">Classe / Categoria</label>
+              <input
+                value={className}
+                onChange={(e) => setClassName(e.target.value)}
+                className="atlas-input"
+                placeholder="Ex: Pastagem, Reserva Legal, Cultura..."
+              />
+            </div>
+
+            {/* Área (ha) — único campo editável */}
+            <div>
+              <label className="atlas-label">Área (ha)</label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={areaHaInput}
+                onChange={(e) => setAreaHaInput(e.target.value)}
+                className="atlas-input"
+                placeholder="Ex: 250,00"
+              />
+            </div>
+
+            {/* Preview calculado */}
+            {previewHa > 0 && (
+              <div
+                className="grid grid-cols-2 gap-3 p-3 rounded"
+                style={{ background: "rgba(0,230,255,0.04)", border: "1px solid rgba(0,230,255,0.12)" }}
+              >
+                <div>
+                  <p style={{ fontFamily: "var(--font-main)", fontSize: "0.65rem", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "#8B949E", marginBottom: 4 }}>
+                    Alqueires (calculado)
+                  </p>
+                  <p style={{ fontFamily: "var(--font-main)", fontSize: "0.95rem", fontWeight: 700, color: "#00E6FF" }}>
+                    {previewAlq.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </p>
+                </div>
+                <div>
+                  <p style={{ fontFamily: "var(--font-main)", fontSize: "0.65rem", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "#8B949E", marginBottom: 4 }}>
+                    % do total atual
+                  </p>
+                  <p style={{ fontFamily: "var(--font-main)", fontSize: "0.95rem", fontWeight: 700, color: "#00E6FF" }}>
+                    {totalHa > 0
+                      ? ((previewHa / (editingRow ? totalHa - (editingRow.area_ha || 0) + previewHa : totalHa + previewHa)) * 100).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + "%"
+                      : "100,0%"}
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
-          <div className="flex gap-3 mt-4">
-            <button onClick={handleSave} className="btn-atlas-primary">Salvar</button>
-            <button onClick={() => setShowForm(false)} className="btn-atlas-outline">Cancelar</button>
+
+          <div className="flex gap-3 mt-5">
+            <button onClick={handleSave} className="btn-atlas-primary" disabled={!className.trim() || !areaHaInput || parseFloat(areaHaInput) <= 0}>
+              Salvar
+            </button>
+            <button onClick={cancel} className="btn-atlas-outline">Cancelar</button>
           </div>
         </div>
       )}
 
+      {/* ── Tabela ── */}
       {rows.length > 0 ? (
         <div className="atlas-card overflow-hidden">
           <div className="table-wrap">
             <table className="atlas-table">
-              <thead><tr>
-                <th>Classe</th><th>Área (ha)</th><th>Área (alq)</th><th>%</th><th>Ações</th>
-              </tr></thead>
-              <tbody>
-                {rows.map((row: any) => (
-                  <tr key={row.id}>
-                    <td style={{ color: "#F2F2F2" }}>{row.class_name}</td>
-                    <td style={{ color: "#00E6FF" }}>{row.area_ha}</td>
-                    <td style={{ color: "#8BA3B5" }}>{row.area_alq}</td>
-                    <td style={{ color: "#00E1FF" }}>{row.percentage}%</td>
-                    <td>
-                      <div className="flex gap-2">
-                        <button onClick={() => startEdit(row)} className="font-montserrat text-xs px-3 py-1 rounded border" style={{ color: "#00E1FF", borderColor: "rgba(0,225,255,0.3)" }}>Editar</button>
-                        <button onClick={() => setDeleteTarget(row.id)} className="font-montserrat text-xs px-3 py-1 rounded border" style={{ color: "#ff6b6b", borderColor: "rgba(255,107,107,0.3)" }}>Excluir</button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-                <tr style={{ background: "rgba(0,225,255,0.04)" }}>
-                  <td className="font-semibold" style={{ color: "#00E1FF" }}>TOTAL</td>
-                  <td className="font-semibold" style={{ color: "#00E6FF" }}>{totalHa.toFixed(2)}</td>
-                  <td colSpan={3}></td>
+              <thead>
+                <tr>
+                  <th>Classe / Categoria</th>
+                  <th>Área (ha)</th>
+                  <th>Área (alq)</th>
+                  <th>%</th>
+                  <th>Ações</th>
                 </tr>
+              </thead>
+              <tbody>
+                {rows.map((row: any) => {
+                  const alq = (row.area_ha || 0) / 2.42;
+                  const pct = totalHa > 0 ? ((row.area_ha || 0) / totalHa) * 100 : 0;
+                  return (
+                    <tr key={row.id}>
+                      <td style={{ color: "#F6F8FA" }}>{row.class_name}</td>
+                      <td style={{ color: "#00E6FF", fontVariantNumeric: "tabular-nums" }}>
+                        {(row.area_ha || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </td>
+                      <td style={{ color: "#8B949E", fontVariantNumeric: "tabular-nums" }}>
+                        {alq.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </td>
+                      <td>
+                        <div className="flex items-center gap-2">
+                          <div className="h-1.5 rounded-full flex-1 max-w-[60px]" style={{ background: "rgba(0,230,255,0.1)" }}>
+                            <div className="h-full rounded-full" style={{ width: `${Math.min(pct, 100)}%`, background: "#00E6FF" }} />
+                          </div>
+                          <span style={{ color: "#00E6FF", fontVariantNumeric: "tabular-nums", minWidth: "42px", fontSize: "0.85rem" }}>
+                            {pct.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%
+                          </span>
+                        </div>
+                      </td>
+                      <td>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => startEdit(row)}
+                            className="font-montserrat text-xs px-3 py-1 rounded border"
+                            style={{ color: "#00E6FF", borderColor: "rgba(0,230,255,0.3)" }}
+                          >
+                            Editar
+                          </button>
+                          <button
+                            onClick={() => setDeleteTarget(row.id)}
+                            className="font-montserrat text-xs px-3 py-1 rounded border"
+                            style={{ color: "#f85149", borderColor: "rgba(248,81,73,0.3)" }}
+                          >
+                            Excluir
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
+              {/* Linha de total */}
+              <tfoot>
+                <tr style={{ borderTop: "1px solid rgba(0,230,255,0.2)", background: "rgba(0,230,255,0.04)" }}>
+                  <td style={{ color: "#F6F8FA", fontWeight: 700, fontSize: "0.78rem", letterSpacing: "0.08em", textTransform: "uppercase", padding: "12px 16px" }}>
+                    Total
+                  </td>
+                  <td style={{ color: "#00E6FF", fontWeight: 700, fontVariantNumeric: "tabular-nums", padding: "12px 16px" }}>
+                    {totalHa.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </td>
+                  <td style={{ color: "#8B949E", fontWeight: 600, fontVariantNumeric: "tabular-nums", padding: "12px 16px" }}>
+                    {totalAlq.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </td>
+                  <td style={{ padding: "12px 16px" }}>
+                    <span style={{ color: "#00E6FF", fontWeight: 700 }}>100,0%</span>
+                  </td>
+                  <td />
+                </tr>
+              </tfoot>
             </table>
           </div>
         </div>
       ) : (
-        <div className="atlas-card p-8 text-center font-montserrat text-sm" style={{ color: "#8BA3B5" }}>
+        <div className="atlas-card p-8 text-center font-montserrat text-sm" style={{ color: "#8B949E" }}>
           Nenhuma linha cadastrada. Clique em "+ Adicionar linha" para começar.
         </div>
       )}
 
-      <ConfirmDeleteModal isOpen={!!deleteTarget} title="Excluir linha"
-        description="Excluir esta linha do quadro de áreas?" loading={false}
+      <ConfirmDeleteModal
+        isOpen={!!deleteTarget}
+        title="Excluir linha"
+        description="Excluir esta linha do quadro de áreas?"
+        loading={false}
         onConfirm={() => { if (deleteTarget) onDelete(deleteTarget); setDeleteTarget(null); }}
-        onCancel={() => setDeleteTarget(null)} />
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }
