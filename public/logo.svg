@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" fill="none">
+  <!-- Ícone de drone/mapa estilizado -->
+  <g transform="translate(0, 8)">
+    <!-- Hexágono com curvas de nível -->
+    <polygon points="32,4 52,16 52,40 32,52 12,40 12,16" fill="none" stroke="#00E1FF" stroke-width="1.5" opacity="0.9"/>
+    <polygon points="32,11 46,19 46,37 32,45 18,37 18,19" fill="none" stroke="#00E1FF" stroke-width="0.8" opacity="0.5"/>
+    <polygon points="32,18 40,23 40,33 32,38 24,33 24,23" fill="none" stroke="#00E1FF" stroke-width="0.6" opacity="0.3"/>
+    <!-- Ponto central com glow -->
+    <circle cx="32" cy="28" r="3" fill="#00E1FF" opacity="0.9"/>
+    <circle cx="32" cy="28" r="6" fill="none" stroke="#00E1FF" stroke-width="0.5" opacity="0.4"/>
+    <!-- Linhas de triangulação -->
+    <line x1="32" y1="4" x2="32" y2="28" stroke="#FFA23A" stroke-width="0.8" opacity="0.6"/>
+    <line x1="52" y1="16" x2="32" y2="28" stroke="#FFA23A" stroke-width="0.8" opacity="0.4"/>
+    <line x1="12" y1="16" x2="32" y2="28" stroke="#FFA23A" stroke-width="0.8" opacity="0.4"/>
+    <!-- Vértices destaque -->
+    <circle cx="32" cy="4" r="2" fill="#FFA23A" opacity="0.8"/>
+    <circle cx="52" cy="16" r="1.5" fill="#00E1FF" opacity="0.7"/>
+    <circle cx="12" cy="16" r="1.5" fill="#00E1FF" opacity="0.7"/>
+  </g>
+  <!-- Texto ATLAS -->
+  <text x="72" y="34" font-family="Orbitron, sans-serif" font-weight="800" font-size="22" fill="#F2F2F2" letter-spacing="4">ATLAS</text>
+  <!-- Texto TERRA -->
+  <text x="72" y="56" font-family="Orbitron, sans-serif" font-weight="400" font-size="14" fill="#00E1FF" letter-spacing="8">TERRA</text>
+  <!-- Linha decorativa entre palavras -->
+  <line x1="72" y1="40" x2="210" y2="40" stroke="#00E1FF" stroke-width="0.5" opacity="0.3"/>
+</svg>

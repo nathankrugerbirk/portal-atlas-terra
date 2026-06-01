@@ -1,0 +1,396 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Montserrat:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --atlas-cyan: #00E1FF;
+  --atlas-cyan-dim: #00B8D4;
+  --atlas-dark-bg: #081320;
+  --atlas-dark-card: #0D1E2C;
+  --atlas-copper: #FFA23A;
+  --atlas-white: #F2F2F2;
+  --atlas-deep-black: #00070F;
+  --atlas-gray-tech: #10191D;
+}
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+  background-color: var(--atlas-dark-bg);
+  color: var(--atlas-white);
+  font-family: 'Montserrat', sans-serif;
+}
+
+/* Scrollbar customizada */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #081320;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1A2C3A;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #00E1FF33;
+}
+
+/* Seleção de texto */
+::selection {
+  background: rgba(0, 225, 255, 0.2);
+  color: #00E1FF;
+}
+
+/* Curvas de nível no fundo - padrão decorativo */
+.contour-bg {
+  position: relative;
+  overflow: hidden;
+}
+
+.contour-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(0, 225, 255, 0.08) 0%, transparent 60%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='600'%3E%3Cellipse cx='300' cy='300' rx='280' ry='180' fill='none' stroke='%2300E1FF' stroke-width='0.4' opacity='0.04'/%3E%3Cellipse cx='300' cy='300' rx='240' ry='150' fill='none' stroke='%2300E1FF' stroke-width='0.4' opacity='0.04'/%3E%3Cellipse cx='300' cy='300' rx='200' ry='120' fill='none' stroke='%2300E1FF' stroke-width='0.4' opacity='0.04'/%3E%3Cellipse cx='300' cy='300' rx='160' ry='90' fill='none' stroke='%2300E1FF' stroke-width='0.4' opacity='0.04'/%3E%3Cellipse cx='300' cy='300' rx='120' ry='60' fill='none' stroke='%2300E1FF' stroke-width='0.4' opacity='0.04'/%3E%3Cellipse cx='300' cy='300' rx='80' ry='35' fill='none' stroke='%2300E1FF' stroke-width='0.4' opacity='0.04'/%3E%3C/svg%3E");
+  background-size: cover, 600px 600px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.contour-bg > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Card com borda ciano */
+.atlas-card {
+  background: linear-gradient(135deg, #0D1E2C 0%, #081320 100%);
+  border: 1px solid rgba(0, 225, 255, 0.2);
+  border-radius: 8px;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.atlas-card:hover {
+  border-color: rgba(0, 225, 255, 0.45);
+  box-shadow: 0 0 20px rgba(0, 225, 255, 0.12), 0 4px 24px rgba(0, 0, 0, 0.4);
+}
+
+/* Input estilo Atlas */
+.atlas-input {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(0, 225, 255, 0.2);
+  border-radius: 6px;
+  color: #F2F2F2;
+  font-family: 'Montserrat', sans-serif;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  outline: none;
+  width: 100%;
+  padding: 10px 14px;
+}
+
+.atlas-input:focus {
+  border-color: rgba(0, 225, 255, 0.6);
+  box-shadow: 0 0 0 3px rgba(0, 225, 255, 0.08);
+}
+
+.atlas-input::placeholder {
+  color: rgba(139, 163, 181, 0.6);
+}
+
+/* Botão primário ciano */
+.btn-atlas-primary {
+  background: linear-gradient(135deg, #00B8D4 0%, #00E1FF 100%);
+  color: #081320;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 700;
+  font-size: 0.875rem;
+  letter-spacing: 0.05em;
+  padding: 10px 24px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.1s, box-shadow 0.2s;
+  text-transform: uppercase;
+}
+
+.btn-atlas-primary:hover {
+  opacity: 0.9;
+  box-shadow: 0 0 20px rgba(0, 225, 255, 0.3);
+}
+
+.btn-atlas-primary:active {
+  transform: scale(0.98);
+}
+
+.btn-atlas-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Botão secundário outline ciano */
+.btn-atlas-outline {
+  background: transparent;
+  color: #00E1FF;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 600;
+  font-size: 0.875rem;
+  letter-spacing: 0.04em;
+  padding: 9px 22px;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 225, 255, 0.4);
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+}
+
+.btn-atlas-outline:hover {
+  border-color: #00E1FF;
+  background: rgba(0, 225, 255, 0.08);
+  box-shadow: 0 0 12px rgba(0, 225, 255, 0.15);
+}
+
+/* Botão copper/destaque */
+.btn-atlas-copper {
+  background: linear-gradient(135deg, #CC7A1A 0%, #FFA23A 100%);
+  color: #081320;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 700;
+  font-size: 0.875rem;
+  letter-spacing: 0.05em;
+  padding: 10px 24px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.2s, box-shadow 0.2s;
+  text-transform: uppercase;
+}
+
+.btn-atlas-copper:hover {
+  opacity: 0.9;
+  box-shadow: 0 0 16px rgba(255, 162, 58, 0.3);
+}
+
+/* Botão danger */
+.btn-atlas-danger {
+  background: transparent;
+  color: #ff4d4d;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 600;
+  font-size: 0.875rem;
+  padding: 9px 22px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 77, 77, 0.3);
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.btn-atlas-danger:hover {
+  background: rgba(255, 77, 77, 0.1);
+  border-color: rgba(255, 77, 77, 0.6);
+}
+
+/* Sidebar link */
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-radius: 6px;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #8BA3B5;
+  text-decoration: none;
+  transition: color 0.2s, background 0.2s;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+}
+
+.sidebar-link:hover {
+  color: #F2F2F2;
+  background: rgba(0, 225, 255, 0.06);
+}
+
+.sidebar-link.active {
+  color: #00E1FF;
+  background: rgba(0, 225, 255, 0.1);
+  border-left: 2px solid #00E1FF;
+}
+
+/* Tab ativa */
+.atlas-tab {
+  padding: 10px 18px;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: #8BA3B5;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+  white-space: nowrap;
+  background: transparent;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  text-transform: uppercase;
+}
+
+.atlas-tab:hover {
+  color: #F2F2F2;
+  border-bottom-color: rgba(0, 225, 255, 0.3);
+}
+
+.atlas-tab.active {
+  color: #00E1FF;
+  border-bottom-color: #00E1FF;
+}
+
+/* Badge de status */
+.badge-active {
+  background: rgba(0, 225, 255, 0.12);
+  color: #00E1FF;
+  border: 1px solid rgba(0, 225, 255, 0.3);
+  padding: 2px 10px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.badge-inactive {
+  background: rgba(139, 163, 181, 0.1);
+  color: #8BA3B5;
+  border: 1px solid rgba(139, 163, 181, 0.2);
+  padding: 2px 10px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* Linha divisória */
+.atlas-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0, 225, 255, 0.2), transparent);
+  margin: 16px 0;
+}
+
+/* Glow no texto */
+.text-glow-cyan {
+  text-shadow: 0 0 20px rgba(0, 225, 255, 0.5);
+}
+
+/* Animação de entrada */
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Toast / Notificação */
+.atlas-toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9999;
+  padding: 14px 20px;
+  border-radius: 8px;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
+  animation: slideUp 0.3s ease-out;
+  max-width: 360px;
+}
+
+.atlas-toast.success {
+  background: rgba(0, 225, 255, 0.1);
+  border: 1px solid rgba(0, 225, 255, 0.3);
+  color: #00E1FF;
+}
+
+.atlas-toast.error {
+  background: rgba(255, 77, 77, 0.1);
+  border: 1px solid rgba(255, 77, 77, 0.3);
+  color: #ff7b7b;
+}
+
+/* Responsive table wrapper */
+.table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+table.atlas-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.875rem;
+}
+
+table.atlas-table th {
+  background: rgba(0, 225, 255, 0.06);
+  color: #00E1FF;
+  font-weight: 600;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid rgba(0, 225, 255, 0.15);
+}
+
+table.atlas-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(0, 225, 255, 0.07);
+  color: #F2F2F2;
+  vertical-align: middle;
+}
+
+table.atlas-table tr:hover td {
+  background: rgba(0, 225, 255, 0.03);
+}
+
+/* Label */
+.atlas-label {
+  display: block;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #8BA3B5;
+  margin-bottom: 6px;
+}
