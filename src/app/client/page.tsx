@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+﻿import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { formatHa } from "@/lib/utils";
 
@@ -175,7 +175,7 @@ function FarmCard({ farm }: { farm: any }) {
           </p>
 
           <div className="flex items-center justify-between">
-            <span className="font-orbitron font-bold text-sm" style={{ color: "#FF8C42" }}>
+            <span className="font-orbitron font-bold text-sm" style={{ color: "#00E6FF" }}>
               {formatHa(farm.total_area_ha)} ha
             </span>
             <span
@@ -198,3 +198,4 @@ function FarmCard({ farm }: { farm: any }) {
     </Link>
   );
 }
+

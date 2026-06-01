@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import Link from "next/link";
@@ -176,7 +176,7 @@ export function FarmManagerClient({ farm, initialModels, initialAreaRows, initia
             </p>
           </div>
         </div>
-        <div className="flex gap-2 text-sm" style={{ color: "#FFA23A" }}>
+        <div className="flex gap-2 text-sm" style={{ color: "#00E6FF" }}>
           <span className="font-montserrat font-semibold">{formatHa(farm.total_area_ha)} ha</span>
           <span style={{ color: "#8BA3B5" }}>·</span>
           <span className="font-montserrat">{formatAlq(farm.total_area_alq)} alq</span>
@@ -375,7 +375,7 @@ function AreaTableSection({ rows, onSave, onDelete }: any) {
                 {rows.map((row: any) => (
                   <tr key={row.id}>
                     <td style={{ color: "#F2F2F2" }}>{row.class_name}</td>
-                    <td style={{ color: "#FFA23A" }}>{row.area_ha}</td>
+                    <td style={{ color: "#00E6FF" }}>{row.area_ha}</td>
                     <td style={{ color: "#8BA3B5" }}>{row.area_alq}</td>
                     <td style={{ color: "#00E1FF" }}>{row.percentage}%</td>
                     <td>
@@ -388,7 +388,7 @@ function AreaTableSection({ rows, onSave, onDelete }: any) {
                 ))}
                 <tr style={{ background: "rgba(0,225,255,0.04)" }}>
                   <td className="font-semibold" style={{ color: "#00E1FF" }}>TOTAL</td>
-                  <td className="font-semibold" style={{ color: "#FFA23A" }}>{totalHa.toFixed(2)}</td>
+                  <td className="font-semibold" style={{ color: "#00E6FF" }}>{totalHa.toFixed(2)}</td>
                   <td colSpan={3}></td>
                 </tr>
               </tbody>
@@ -658,13 +658,13 @@ function PdfsSection({ pdfs, onUpload, onDelete }: any) {
 
       {/* Mapas */}
       <div>
-        <h3 className="font-orbitron font-semibold text-sm uppercase tracking-widest mb-3" style={{ color: "#FFA23A" }}>Mapas do Imóvel</h3>
+        <h3 className="font-orbitron font-semibold text-sm uppercase tracking-widest mb-3" style={{ color: "#00E6FF" }}>Mapas do Imóvel</h3>
         <PdfList items={mapas} />
       </div>
 
       {/* Relatórios */}
       <div>
-        <h3 className="font-orbitron font-semibold text-sm uppercase tracking-widest mb-3" style={{ color: "#FFA23A" }}>Relatórios e Extras</h3>
+        <h3 className="font-orbitron font-semibold text-sm uppercase tracking-widest mb-3" style={{ color: "#00E6FF" }}>Relatórios e Extras</h3>
         <PdfList items={relatorios} />
       </div>
 
@@ -674,3 +674,4 @@ function PdfsSection({ pdfs, onUpload, onDelete }: any) {
     </div>
   );
 }
+

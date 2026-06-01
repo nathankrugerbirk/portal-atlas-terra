@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+﻿import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { StatCard } from "@/components/admin/StatCard";
 import { formatDate } from "@/lib/utils";
@@ -49,7 +49,7 @@ export default async function AdminDashboard() {
         <StatCard
           label="Total de Fazendas"
           value={farmCount ?? 0}
-          accent="copper"
+          accent="cyan"
           icon={
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <polygon points="3 11 12 2 21 11"/>
@@ -145,3 +145,4 @@ export default async function AdminDashboard() {
     </div>
   );
 }
+

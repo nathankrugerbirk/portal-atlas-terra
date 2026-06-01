@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
@@ -111,9 +111,9 @@ function ImageCard({ img, onOpenLightbox }: {
               disabled={downloading}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded font-montserrat text-xs font-600 transition-all"
               style={{
-                background: "rgba(255,140,66,0.12)",
-                border: "1px solid rgba(255,140,66,0.35)",
-                color: "#FF8C42",
+                background: "rgba(0,230,255,0.08)",
+                border: "1px solid rgba(0,230,255,0.3)",
+                color: "#00E6FF",
               }}
             >
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -269,9 +269,9 @@ function PdfViewer({ title, onClose, bucket, path }: {
             disabled={downloading || !pdfUrl}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded font-montserrat text-xs font-semibold transition-all"
             style={{
-              background: "rgba(255,140,66,0.12)",
-              border: "1px solid rgba(255,140,66,0.35)",
-              color: "#FF8C42",
+              background: "rgba(0,230,255,0.08)",
+              border: "1px solid rgba(0,230,255,0.3)",
+              color: "#00E6FF",
               cursor: downloading || !pdfUrl ? "not-allowed" : "pointer",
               opacity: !pdfUrl ? 0.5 : 1,
             }}
@@ -388,9 +388,9 @@ function PdfItem({ title, subtitle, onView, onDownload, downloading }: {
           disabled={downloading}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded font-montserrat text-xs font-semibold transition-all"
           style={{
-            background: "rgba(255,140,66,0.08)",
-            border: "1px solid rgba(255,140,66,0.3)",
-            color: "#FF8C42",
+            background: "rgba(0,230,255,0.06)",
+            border: "1px solid rgba(0,230,255,0.25)",
+            color: "#00E6FF",
             cursor: downloading ? "not-allowed" : "pointer",
             opacity: downloading ? 0.6 : 1,
           }}
@@ -480,14 +480,14 @@ export function FarmDetailClient({ farm, models, areaRows, docNumbers, docFiles,
           </div>
           <div className="flex gap-6 flex-shrink-0">
             <div className="text-center">
-              <p className="font-orbitron font-bold text-xl" style={{ color: "#FF8C42" }}>
+              <p className="font-orbitron font-bold text-xl" style={{ color: "#00E6FF" }}>
                 {formatHa(farm.total_area_ha)}
               </p>
               <p className="font-montserrat text-xs uppercase tracking-widest mt-0.5" style={{ color: "#6B7280" }}>hectares</p>
             </div>
             <div className="text-center">
-              <p className="font-orbitron font-bold text-xl" style={{ color: "#FF8C42" }}>
-                {formatAlq(farm.total_area_alq)}
+              <p className="font-orbitron font-bold text-xl" style={{ color: "#00E6FF" }}>
+                {formatAlq(farm.total_area_ha / 2.42)}
               </p>
               <p className="font-montserrat text-xs uppercase tracking-widest mt-0.5" style={{ color: "#6B7280" }}>alqueires</p>
             </div>
@@ -573,61 +573,100 @@ export function FarmDetailClient({ farm, models, areaRows, docNumbers, docFiles,
       })()}
 
       {/* ── Tab 3: Quadro de Áreas ─────────────────────────────────────── */}
-      {activeTab === 3 && (
-        <div className="animate-slide-up">
-          <h2 className="font-orbitron font-semibold text-sm uppercase tracking-widest mb-5" style={{ color: "#00C8D9" }}>
-            Quadro de Áreas
-          </h2>
-          {areaRows.length > 0 ? (
-            <>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
-                <div className="atlas-card p-4 text-center">
-                  <p className="font-orbitron font-bold text-xl" style={{ color: "#FF8C42" }}>{formatHa(farm.total_area_ha)}</p>
-                  <p className="font-montserrat text-xs uppercase tracking-widest mt-1" style={{ color: "#6B7280" }}>hectares total</p>
+      {activeTab === 3 && (() => {
+        const totalHa = areaRows.reduce((sum: number, r: any) => sum + (r.area_ha || 0), 0);
+        const totalAlq = totalHa / 2.42;
+        return (
+          <div className="animate-slide-up">
+            <h2 className="font-orbitron font-semibold text-sm uppercase tracking-widest mb-5" style={{ color: "#00E6FF" }}>
+              Quadro de Áreas
+            </h2>
+            {areaRows.length > 0 ? (
+              <>
+                {/* Cards de totais */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
+                  <div className="atlas-card p-4 text-center">
+                    <p className="font-orbitron font-bold text-xl" style={{ color: "#00E6FF" }}>{formatHa(totalHa)}</p>
+                    <p className="font-montserrat text-xs uppercase tracking-widest mt-1" style={{ color: "#8B949E" }}>hectares total</p>
+                  </div>
+                  <div className="atlas-card p-4 text-center">
+                    <p className="font-orbitron font-bold text-xl" style={{ color: "#00E6FF" }}>{formatAlq(totalAlq)}</p>
+                    <p className="font-montserrat text-xs uppercase tracking-widest mt-1" style={{ color: "#8B949E" }}>alqueires total</p>
+                  </div>
+                  <div className="atlas-card p-4 text-center">
+                    <p className="font-orbitron font-bold text-xl" style={{ color: "#00E6FF" }}>{areaRows.length}</p>
+                    <p className="font-montserrat text-xs uppercase tracking-widest mt-1" style={{ color: "#8B949E" }}>classes</p>
+                  </div>
                 </div>
-                <div className="atlas-card p-4 text-center">
-                  <p className="font-orbitron font-bold text-xl" style={{ color: "#FF8C42" }}>{formatAlq(farm.total_area_alq)}</p>
-                  <p className="font-montserrat text-xs uppercase tracking-widest mt-1" style={{ color: "#6B7280" }}>alqueires total</p>
-                </div>
-                <div className="atlas-card p-4 text-center">
-                  <p className="font-orbitron font-bold text-xl" style={{ color: "#00C8D9" }}>{areaRows.length}</p>
-                  <p className="font-montserrat text-xs uppercase tracking-widest mt-1" style={{ color: "#6B7280" }}>classes</p>
-                </div>
-              </div>
-              <div className="atlas-card overflow-hidden">
-                <div className="table-wrap">
-                  <table className="atlas-table">
-                    <thead><tr>
-                      <th>Classe / Categoria</th><th>Área (ha)</th><th>Área (alq)</th><th>%</th>
-                    </tr></thead>
-                    <tbody>
-                      {areaRows.map((row: any) => (
-                        <tr key={row.id}>
-                          <td style={{ color: "#FFFFFF" }}>{row.class_name}</td>
-                          <td style={{ color: "#FF8C42" }}>{formatHa(row.area_ha)}</td>
-                          <td style={{ color: "#6B7280" }}>{formatAlq(row.area_alq)}</td>
-                          <td>
-                            <div className="flex items-center gap-2">
-                              <div className="h-1.5 rounded-full flex-1 max-w-16" style={{ background: "rgba(0,200,217,0.1)" }}>
-                                <div className="h-full rounded-full" style={{ width: `${Math.min(row.percentage, 100)}%`, background: "#00C8D9" }}/>
-                              </div>
-                              <span style={{ color: "#00C8D9" }}>{formatPct(row.percentage)}</span>
-                            </div>
+
+                {/* Tabela */}
+                <div className="atlas-card overflow-hidden">
+                  <div className="table-wrap">
+                    <table className="atlas-table">
+                      <thead>
+                        <tr>
+                          <th>Classe / Categoria</th>
+                          <th>Área (ha)</th>
+                          <th>Área (alq)</th>
+                          <th>%</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {areaRows.map((row: any) => {
+                          const alq = (row.area_ha || 0) / 2.42;
+                          const pct = totalHa > 0 ? ((row.area_ha || 0) / totalHa) * 100 : 0;
+                          return (
+                            <tr key={row.id}>
+                              <td style={{ color: "#F6F8FA" }}>{row.class_name}</td>
+                              <td style={{ color: "#00E6FF", fontVariantNumeric: "tabular-nums" }}>
+                                {formatHa(row.area_ha)}
+                              </td>
+                              <td style={{ color: "#8B949E", fontVariantNumeric: "tabular-nums" }}>
+                                {formatAlq(alq)}
+                              </td>
+                              <td>
+                                <div className="flex items-center gap-2">
+                                  <div className="h-1.5 rounded-full flex-1 max-w-16" style={{ background: "rgba(0,230,255,0.1)" }}>
+                                    <div className="h-full rounded-full" style={{ width: `${Math.min(pct, 100)}%`, background: "#00E6FF" }}/>
+                                  </div>
+                                  <span style={{ color: "#00E6FF", fontVariantNumeric: "tabular-nums", minWidth: "42px" }}>
+                                    {formatPct(pct)}
+                                  </span>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                      {/* Linha de total */}
+                      <tfoot>
+                        <tr style={{ borderTop: "1px solid rgba(0,230,255,0.2)" }}>
+                          <td style={{ color: "#F6F8FA", fontWeight: 700, fontSize: "0.8rem", letterSpacing: "0.06em", textTransform: "uppercase", padding: "12px 16px" }}>
+                            Total
+                          </td>
+                          <td style={{ color: "#00E6FF", fontWeight: 700, fontVariantNumeric: "tabular-nums", padding: "12px 16px" }}>
+                            {formatHa(totalHa)}
+                          </td>
+                          <td style={{ color: "#8B949E", fontWeight: 600, fontVariantNumeric: "tabular-nums", padding: "12px 16px" }}>
+                            {formatAlq(totalAlq)}
+                          </td>
+                          <td style={{ padding: "12px 16px" }}>
+                            <span style={{ color: "#00E6FF", fontWeight: 700 }}>100,0%</span>
                           </td>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </tfoot>
+                    </table>
+                  </div>
                 </div>
+              </>
+            ) : (
+              <div className="atlas-card p-12 text-center">
+                <p className="font-montserrat text-sm" style={{ color: "#8B949E" }}>Quadro de áreas não disponível ainda.</p>
               </div>
-            </>
-          ) : (
-            <div className="atlas-card p-12 text-center">
-              <p className="font-montserrat text-sm" style={{ color: "#6B7280" }}>Quadro de áreas não disponível ainda.</p>
-            </div>
-          )}
-        </div>
-      )}
+            )}
+          </div>
+        );
+      })()}
 
       {/* ── Tab 4: Documentação ────────────────────────────────────────── */}
       {activeTab === 4 && (
@@ -761,7 +800,7 @@ export function FarmDetailClient({ farm, models, areaRows, docNumbers, docFiles,
         <div className="animate-slide-up space-y-8">
           {mapas.length > 0 && (
             <div>
-              <h3 className="font-orbitron font-semibold text-sm uppercase tracking-widest mb-4" style={{ color: "#FF8C42" }}>
+              <h3 className="font-orbitron font-semibold text-sm uppercase tracking-widest mb-4" style={{ color: "#00E6FF" }}>
                 Mapas do Imóvel
               </h3>
               <div className="space-y-2">
@@ -780,7 +819,7 @@ export function FarmDetailClient({ farm, models, areaRows, docNumbers, docFiles,
 
           {relatorios.length > 0 && (
             <div>
-              <h3 className="font-orbitron font-semibold text-sm uppercase tracking-widest mb-4" style={{ color: "#FF8C42" }}>
+              <h3 className="font-orbitron font-semibold text-sm uppercase tracking-widest mb-4" style={{ color: "#00E6FF" }}>
                 Relatórios e Extras
               </h3>
               <div className="space-y-2">
@@ -807,3 +846,4 @@ export function FarmDetailClient({ farm, models, areaRows, docNumbers, docFiles,
     </div>
   );
 }
+

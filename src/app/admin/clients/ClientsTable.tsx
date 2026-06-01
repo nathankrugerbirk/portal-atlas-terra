@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -138,7 +138,7 @@ export function ClientsTable({ initialClients }: { initialClients: ClientRow[] }
                       <button
                         onClick={() => { setResetTarget(client); setNewPassword(""); }}
                         className="font-montserrat text-xs font-600 px-3 py-1.5 rounded border transition-colors"
-                        style={{ color: "#FFA23A", borderColor: "rgba(255,162,58,0.3)" }}
+                        style={{ color: "#00E6FF", borderColor: "rgba(0,230,255,0.25)" }}
                       >
                         Redefinir senha
                       </button>
@@ -204,3 +204,4 @@ export function ClientsTable({ initialClients }: { initialClients: ClientRow[] }
     </>
   );
 }
+

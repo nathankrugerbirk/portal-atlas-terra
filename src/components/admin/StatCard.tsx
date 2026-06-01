@@ -1,12 +1,12 @@
-interface StatCardProps {
+﻿interface StatCardProps {
   label: string;
   value: string | number;
   icon: React.ReactNode;
-  accent?: "cyan" | "copper";
+  accent?: "cyan";
 }
 
 export function StatCard({ label, value, icon, accent = "cyan" }: StatCardProps) {
-  const color = accent === "cyan" ? "#00E1FF" : "#FFA23A";
+  const color = accent === "cyan" ? "#00E1FF" : "#00E6FF";
   const bg = accent === "cyan" ? "rgba(0,225,255,0.08)" : "rgba(255,162,58,0.08)";
 
   return (
@@ -28,3 +28,4 @@ export function StatCard({ label, value, icon, accent = "cyan" }: StatCardProps)
     </div>
   );
 }
+

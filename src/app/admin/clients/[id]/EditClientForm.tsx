@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -124,7 +124,7 @@ export function EditClientForm({ client }: { client: any }) {
             <Link
               href={`/admin/farms/new?client_id=${client.id}`}
               className="font-montserrat text-xs font-600"
-              style={{ color: "#FFA23A" }}
+              style={{ color: "#00E6FF" }}
             >
               + Nova fazenda
             </Link>
@@ -165,3 +165,4 @@ export function EditClientForm({ client }: { client: any }) {
     </div>
   );
 }
+

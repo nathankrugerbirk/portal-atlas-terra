@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import Link from "next/link";
@@ -68,7 +68,7 @@ export function FarmsAdminTable({ initialFarms }: { initialFarms: any[] }) {
                   <td style={{ color: "#8BA3B5" }}>
                     {farm.city}, {farm.state}
                   </td>
-                  <td style={{ color: "#FFA23A" }}>
+                  <td style={{ color: "#00E6FF" }}>
                     {formatHa(farm.total_area_ha)} ha
                   </td>
                   <td style={{ color: "#8BA3B5" }}>{formatDate(farm.created_at)}</td>
@@ -109,3 +109,4 @@ export function FarmsAdminTable({ initialFarms }: { initialFarms: any[] }) {
     </>
   );
 }
+
