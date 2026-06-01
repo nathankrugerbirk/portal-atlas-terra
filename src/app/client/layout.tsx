@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
-import { ClientHeader } from "@/components/client/ClientHeader";
+import { ClientLayout } from "@/components/client/ClientLayout";
 
-export default async function ClientLayout({ children }: { children: React.ReactNode }) {
+export default async function ClientRootLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -16,14 +16,8 @@ export default async function ClientLayout({ children }: { children: React.React
   }
 
   return (
-    <div
-      className="min-h-screen flex flex-col"
-      style={{ background: "linear-gradient(160deg, #000B13 0%, #081320 100%)" }}
-    >
-      <ClientHeader clientName={clientName} />
-      <main className="flex-1 p-6 max-w-7xl mx-auto w-full">
-        {children}
-      </main>
-    </div>
+    <ClientLayout clientName={clientName}>
+      {children}
+    </ClientLayout>
   );
 }

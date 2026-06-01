@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { formatHa, formatAlq, formatPct, getYouTubeId } from "@/lib/utils";
 
@@ -151,15 +151,18 @@ function ImageCard({ img, onOpenLightbox }: {
 
 /* ─── Lightbox de imagem ────────────────────────────────────────────── */
 function ImageLightbox({ url, title, onClose }: { url: string; title: string; onClose: () => void }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [onClose]);
+    containerRef.current?.focus();
+  }, []);
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      ref={containerRef}
+      tabIndex={-1}
+      onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 outline-none"
       style={{ background: "rgba(6,14,24,0.96)", backdropFilter: "blur(8px)" }}
       onClick={onClose}
     >
@@ -214,6 +217,8 @@ function PdfViewer({ title, onClose, bucket, path }: {
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
 
+  const containerRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     fetchSignedUrl(bucket, path).then((url) => {
       setPdfUrl(url);
@@ -222,10 +227,8 @@ function PdfViewer({ title, onClose, bucket, path }: {
   }, [bucket, path]);
 
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [onClose]);
+    containerRef.current?.focus();
+  }, []);
 
   async function handleDownload() {
     setDownloading(true);
@@ -235,7 +238,10 @@ function PdfViewer({ title, onClose, bucket, path }: {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex flex-col"
+      ref={containerRef}
+      tabIndex={-1}
+      onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
+      className="fixed inset-0 z-50 flex flex-col outline-none"
       style={{ background: "rgba(6,14,24,0.98)", backdropFilter: "blur(8px)" }}
     >
       {/* Barra superior */}
