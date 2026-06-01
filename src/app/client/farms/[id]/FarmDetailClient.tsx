@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { formatHa, formatAlq, formatPct, getYouTubeId } from "@/lib/utils";
 
@@ -13,81 +13,484 @@ const DOC_LABELS: Record<string, string> = {
   matricula: "Matrícula", ccir: "CCIR", cib: "CIB", sigef: "SIGEF", car: "CAR"
 };
 
-export function FarmDetailClient({ farm, models, areaRows, docNumbers, docFiles, images, videos, pdfs }: any) {
-  const [activeTab, setActiveTab] = useState(0);
-  const [lightboxImg, setLightboxImg] = useState<string | null>(null);
-
-  const model3d = models.find((m: any) => m.type === "3d");
-  const model2d = models.find((m: any) => m.type === "2d");
-  const mapas = pdfs.filter((p: any) => p.category === "mapa");
-  const relatorios = pdfs.filter((p: any) => p.category === "relatorio");
-
-  async function getSignedUrl(bucket: string, path: string) {
+/* ─── Utilitário: busca URL assinada ────────────────────────────────── */
+async function fetchSignedUrl(bucket: string, path: string): Promise<string | null> {
+  try {
     const res = await fetch("/api/admin/signed-url", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ bucket, path }),
     });
     const data = await res.json();
-    return data.signedUrl;
+    return data.signedUrl ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/* ─── Download forçado ──────────────────────────────────────────────── */
+async function triggerDownload(bucket: string, path: string, filename: string) {
+  const url = await fetchSignedUrl(bucket, path);
+  if (!url) return;
+  const res = await fetch(url);
+  const blob = await res.blob();
+  const blobUrl = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = blobUrl;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
+}
+
+/* ─── Componente: thumbnail de imagem ──────────────────────────────── */
+function ImageCard({ img, onOpenLightbox }: {
+  img: any;
+  onOpenLightbox: (url: string, title: string) => void;
+}) {
+  const [thumbUrl, setThumbUrl] = useState<string | null>(null);
+  const [downloading, setDownloading] = useState(false);
+
+  useEffect(() => {
+    fetchSignedUrl("farm-images", img.file_path).then(setThumbUrl);
+  }, [img.file_path]);
+
+  async function handleDownload(e: React.MouseEvent) {
+    e.stopPropagation();
+    setDownloading(true);
+    await triggerDownload("farm-images", img.file_path, (img.title || "imagem") + "." + img.file_path.split(".").pop());
+    setDownloading(false);
   }
 
-  async function openFile(bucket: string, path: string) {
-    const url = await getSignedUrl(bucket, path);
-    if (url) window.open(url, "_blank");
+  return (
+    <div
+      className="relative group rounded-lg overflow-hidden"
+      style={{
+        border: "1px solid rgba(0,200,217,0.15)",
+        aspectRatio: "4/3",
+        background: "#111820",
+        cursor: thumbUrl ? "pointer" : "default",
+      }}
+    >
+      {thumbUrl ? (
+        <>
+          {/* Thumbnail */}
+          <img
+            src={thumbUrl}
+            alt={img.title || "Imagem"}
+            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+            onClick={() => onOpenLightbox(thumbUrl, img.title || "Imagem")}
+          />
+
+          {/* Overlay hover */}
+          <div
+            className="absolute inset-0 flex flex-col items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+            style={{ background: "rgba(6,14,24,0.75)" }}
+          >
+            {/* Botão visualizar */}
+            <button
+              onClick={() => onOpenLightbox(thumbUrl, img.title || "Imagem")}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded font-montserrat text-xs font-600 transition-all"
+              style={{
+                background: "rgba(0,200,217,0.15)",
+                border: "1px solid rgba(0,200,217,0.4)",
+                color: "#00C8D9",
+              }}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+              Visualizar
+            </button>
+
+            {/* Botão download */}
+            <button
+              onClick={handleDownload}
+              disabled={downloading}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded font-montserrat text-xs font-600 transition-all"
+              style={{
+                background: "rgba(255,140,66,0.12)",
+                border: "1px solid rgba(255,140,66,0.35)",
+                color: "#FF8C42",
+              }}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              {downloading ? "Baixando..." : "Download"}
+            </button>
+          </div>
+
+          {/* Título */}
+          {img.title && (
+            <div
+              className="absolute bottom-0 left-0 right-0 px-3 py-2 font-montserrat text-xs truncate"
+              style={{ background: "rgba(6,14,24,0.85)", color: "rgba(255,255,255,0.7)" }}
+            >
+              {img.title}
+            </div>
+          )}
+        </>
+      ) : (
+        /* Skeleton enquanto carrega */
+        <div className="absolute inset-0 flex items-center justify-center animate-pulse">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ color: "#6B7280" }}>
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+            <circle cx="8.5" cy="8.5" r="1.5"/>
+            <path d="m21 15-5-5L5 21"/>
+          </svg>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── Lightbox de imagem ────────────────────────────────────────────── */
+function ImageLightbox({ url, title, onClose }: { url: string; title: string; onClose: () => void }) {
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: "rgba(6,14,24,0.96)", backdropFilter: "blur(8px)" }}
+      onClick={onClose}
+    >
+      <div
+        className="relative max-w-5xl w-full animate-fade-in"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between mb-3">
+          <p className="font-montserrat text-sm font-semibold" style={{ color: "#FFFFFF" }}>{title}</p>
+          <button
+            onClick={onClose}
+            className="flex items-center gap-1.5 font-montserrat text-xs px-3 py-1.5 rounded transition-colors"
+            style={{ color: "#6B7280", border: "1px solid rgba(107,114,128,0.3)" }}
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+            Fechar
+          </button>
+        </div>
+
+        {/* Imagem */}
+        <img
+          src={url}
+          alt={title}
+          className="w-full rounded-lg"
+          style={{
+            maxHeight: "80vh",
+            objectFit: "contain",
+            border: "1px solid rgba(0,200,217,0.2)",
+            boxShadow: "0 0 60px rgba(0,200,217,0.08)",
+          }}
+        />
+
+        <p className="text-center mt-3 font-montserrat text-xs" style={{ color: "rgba(107,114,128,0.5)" }}>
+          Clique fora para fechar · ESC
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Visualizador de PDF inline ────────────────────────────────────── */
+function PdfViewer({ title, onClose, bucket, path }: {
+  title: string;
+  onClose: () => void;
+  bucket: string;
+  path: string;
+}) {
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [downloading, setDownloading] = useState(false);
+
+  useEffect(() => {
+    fetchSignedUrl(bucket, path).then((url) => {
+      setPdfUrl(url);
+      setLoading(false);
+    });
+  }, [bucket, path]);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onClose]);
+
+  async function handleDownload() {
+    setDownloading(true);
+    await triggerDownload(bucket, path, title + ".pdf");
+    setDownloading(false);
   }
 
-  async function downloadFile(bucket: string, path: string, filename: string) {
-    const url = await getSignedUrl(bucket, path);
-    if (!url) return;
-    const a = document.createElement("a");
-    a.href = url; a.download = filename; a.click();
+  return (
+    <div
+      className="fixed inset-0 z-50 flex flex-col"
+      style={{ background: "rgba(6,14,24,0.98)", backdropFilter: "blur(8px)" }}
+    >
+      {/* Barra superior */}
+      <div
+        className="flex items-center justify-between px-5 py-3 flex-shrink-0"
+        style={{ borderBottom: "1px solid rgba(0,200,217,0.12)", background: "#0A1A26" }}
+      >
+        <div className="flex items-center gap-3">
+          <div
+            className="w-8 h-8 rounded flex items-center justify-center flex-shrink-0"
+            style={{ background: "rgba(255,80,80,0.1)", border: "1px solid rgba(255,80,80,0.2)" }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ff6b6b" strokeWidth="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+            </svg>
+          </div>
+          <p className="font-montserrat font-semibold text-sm" style={{ color: "#FFFFFF" }}>{title}</p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {/* Download */}
+          <button
+            onClick={handleDownload}
+            disabled={downloading || !pdfUrl}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded font-montserrat text-xs font-semibold transition-all"
+            style={{
+              background: "rgba(255,140,66,0.12)",
+              border: "1px solid rgba(255,140,66,0.35)",
+              color: "#FF8C42",
+              cursor: downloading || !pdfUrl ? "not-allowed" : "pointer",
+              opacity: !pdfUrl ? 0.5 : 1,
+            }}
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            {downloading ? "Baixando..." : "Download"}
+          </button>
+
+          {/* Fechar */}
+          <button
+            onClick={onClose}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded font-montserrat text-xs transition-colors"
+            style={{ color: "#6B7280", border: "1px solid rgba(107,114,128,0.3)" }}
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+            Fechar · ESC
+          </button>
+        </div>
+      </div>
+
+      {/* Área do PDF */}
+      <div className="flex-1 overflow-hidden">
+        {loading && (
+          <div className="h-full flex items-center justify-center">
+            <div className="text-center">
+              <svg className="animate-spin mx-auto mb-3" width="32" height="32" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="#00C8D9" strokeWidth="4"/>
+                <path className="opacity-75" fill="#00C8D9" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+              </svg>
+              <p className="font-montserrat text-sm" style={{ color: "#6B7280" }}>Carregando documento...</p>
+            </div>
+          </div>
+        )}
+
+        {!loading && pdfUrl && (
+          <iframe
+            src={pdfUrl}
+            className="w-full h-full"
+            style={{ border: "none" }}
+            title={title}
+          />
+        )}
+
+        {!loading && !pdfUrl && (
+          <div className="h-full flex items-center justify-center">
+            <p className="font-montserrat text-sm" style={{ color: "#6B7280" }}>
+              Não foi possível carregar o documento.
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ─── Item de PDF na lista ──────────────────────────────────────────── */
+function PdfItem({ title, subtitle, onView, onDownload, downloading }: {
+  title: string;
+  subtitle?: string;
+  onView: () => void;
+  onDownload: () => void;
+  downloading?: boolean;
+}) {
+  return (
+    <div
+      className="flex items-center gap-3 p-4 rounded-lg transition-colors"
+      style={{ background: "rgba(0,200,217,0.03)", border: "1px solid rgba(0,200,217,0.1)" }}
+    >
+      <div
+        className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+        style={{ background: "rgba(255,68,68,0.1)", border: "1px solid rgba(255,68,68,0.2)" }}
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ff6b6b" strokeWidth="1.8">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="16" y1="13" x2="8" y2="13"/>
+          <line x1="16" y1="17" x2="8" y2="17"/>
+          <polyline points="10 9 9 9 8 9"/>
+        </svg>
+      </div>
+
+      <div className="flex-1 min-w-0">
+        <p className="font-montserrat font-semibold text-sm truncate" style={{ color: "#FFFFFF" }}>{title}</p>
+        {subtitle && (
+          <p className="font-montserrat text-xs mt-0.5" style={{ color: "#6B7280" }}>{subtitle}</p>
+        )}
+      </div>
+
+      <div className="flex gap-2 flex-shrink-0">
+        <button
+          onClick={onView}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded font-montserrat text-xs font-semibold transition-all"
+          style={{
+            background: "rgba(0,200,217,0.08)",
+            border: "1px solid rgba(0,200,217,0.3)",
+            color: "#00C8D9",
+          }}
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+          Visualizar
+        </button>
+
+        <button
+          onClick={onDownload}
+          disabled={downloading}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded font-montserrat text-xs font-semibold transition-all"
+          style={{
+            background: "rgba(255,140,66,0.08)",
+            border: "1px solid rgba(255,140,66,0.3)",
+            color: "#FF8C42",
+            cursor: downloading ? "not-allowed" : "pointer",
+            opacity: downloading ? 0.6 : 1,
+          }}
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          {downloading ? "Baixando..." : "Download"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Componente principal ──────────────────────────────────────────── */
+export function FarmDetailClient({ farm, models, areaRows, docNumbers, docFiles, images, videos, pdfs }: any) {
+  const [activeTab, setActiveTab] = useState(0);
+
+  // Lightbox de imagem
+  const [lightbox, setLightbox] = useState<{ url: string; title: string } | null>(null);
+
+  // Visualizador de PDF
+  const [pdfViewer, setPdfViewer] = useState<{
+    title: string; bucket: string; path: string;
+  } | null>(null);
+
+  // Download state por item (key = id)
+  const [downloading, setDownloading] = useState<Record<string, boolean>>({});
+
+  const model3d = models.find((m: any) => m.type === "3d");
+  const model2d = models.find((m: any) => m.type === "2d");
+  const mapas = pdfs.filter((p: any) => p.category === "mapa");
+  const relatorios = pdfs.filter((p: any) => p.category === "relatorio");
+
+  async function handleDownloadPdf(id: string, bucket: string, path: string, title: string) {
+    setDownloading((prev) => ({ ...prev, [id]: true }));
+    await triggerDownload(bucket, path, title + ".pdf");
+    setDownloading((prev) => ({ ...prev, [id]: false }));
   }
 
   return (
     <div className="animate-fade-in">
+
+      {/* Lightbox de imagem */}
+      {lightbox && (
+        <ImageLightbox
+          url={lightbox.url}
+          title={lightbox.title}
+          onClose={() => setLightbox(null)}
+        />
+      )}
+
+      {/* Visualizador de PDF */}
+      {pdfViewer && (
+        <PdfViewer
+          title={pdfViewer.title}
+          bucket={pdfViewer.bucket}
+          path={pdfViewer.path}
+          onClose={() => setPdfViewer(null)}
+        />
+      )}
+
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 mb-6 font-montserrat text-sm">
-        <Link href="/client" style={{ color: "#8BA3B5" }}>Minhas Fazendas</Link>
-        <span style={{ color: "#8BA3B5" }}>→</span>
-        <span style={{ color: "#00E1FF" }}>{farm.name}</span>
+        <Link href="/client" style={{ color: "#6B7280" }}>Minhas Fazendas</Link>
+        <span style={{ color: "#6B7280" }}>→</span>
+        <span style={{ color: "#00C8D9" }}>{farm.name}</span>
       </div>
 
       {/* Header da fazenda */}
-      <div className="atlas-card p-6 mb-6" style={{ borderColor: "rgba(0,225,255,0.25)" }}>
+      <div className="atlas-card p-6 mb-6" style={{ borderColor: "rgba(0,200,217,0.25)" }}>
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div>
-            <h1 className="font-orbitron font-bold text-2xl mb-1" style={{ color: "#F2F2F2" }}>
+            <h1 className="font-orbitron font-bold text-2xl mb-1" style={{ color: "#FFFFFF" }}>
               {farm.name}
             </h1>
-            <p className="font-montserrat text-sm" style={{ color: "#8BA3B5" }}>
+            <p className="font-montserrat text-sm" style={{ color: "#6B7280" }}>
               {farm.city}, {farm.state}
             </p>
             {farm.description && (
-              <p className="font-montserrat text-sm mt-2" style={{ color: "rgba(139,163,181,0.8)" }}>
+              <p className="font-montserrat text-sm mt-2" style={{ color: "rgba(107,114,128,0.8)" }}>
                 {farm.description}
               </p>
             )}
           </div>
           <div className="flex gap-6 flex-shrink-0">
             <div className="text-center">
-              <p className="font-orbitron font-bold text-xl" style={{ color: "#FFA23A" }}>
+              <p className="font-orbitron font-bold text-xl" style={{ color: "#FF8C42" }}>
                 {formatHa(farm.total_area_ha)}
               </p>
-              <p className="font-montserrat text-xs uppercase tracking-widest mt-0.5" style={{ color: "#8BA3B5" }}>hectares</p>
+              <p className="font-montserrat text-xs uppercase tracking-widest mt-0.5" style={{ color: "#6B7280" }}>hectares</p>
             </div>
             <div className="text-center">
-              <p className="font-orbitron font-bold text-xl" style={{ color: "#FFA23A" }}>
+              <p className="font-orbitron font-bold text-xl" style={{ color: "#FF8C42" }}>
                 {formatAlq(farm.total_area_alq)}
               </p>
-              <p className="font-montserrat text-xs uppercase tracking-widest mt-0.5" style={{ color: "#8BA3B5" }}>alqueires</p>
+              <p className="font-montserrat text-xs uppercase tracking-widest mt-0.5" style={{ color: "#6B7280" }}>alqueires</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex overflow-x-auto gap-0 mb-6" style={{ borderBottom: "1px solid rgba(0,225,255,0.12)" }}>
+      <div className="flex overflow-x-auto gap-0 mb-6" style={{ borderBottom: "1px solid rgba(0,200,217,0.12)" }}>
         {TABS.map((tab, i) => (
           <button key={i} onClick={() => setActiveTab(i)} className={`atlas-tab ${activeTab === i ? "active" : ""}`}>
             {tab}
@@ -98,7 +501,7 @@ export function FarmDetailClient({ farm, models, areaRows, docNumbers, docFiles,
       {/* ── Tab 0: Visão Geral ─────────────────────────────────────────── */}
       {activeTab === 0 && (
         <div className="animate-slide-up">
-          <h2 className="font-orbitron font-semibold text-sm uppercase tracking-widest mb-5" style={{ color: "#00E1FF" }}>
+          <h2 className="font-orbitron font-semibold text-sm uppercase tracking-widest mb-5" style={{ color: "#00C8D9" }}>
             Materiais Disponíveis
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -117,8 +520,8 @@ export function FarmDetailClient({ farm, models, areaRows, docNumbers, docFiles,
                 style={{ opacity: available ? 1 : 0.5 }}
               >
                 <span className="text-2xl block mb-2">{icon}</span>
-                <p className="font-montserrat font-semibold text-sm" style={{ color: "#F2F2F2" }}>{label}</p>
-                <p className="font-montserrat text-xs mt-1" style={{ color: available ? "#00E1FF" : "#8BA3B5" }}>
+                <p className="font-montserrat font-semibold text-sm" style={{ color: "#FFFFFF" }}>{label}</p>
+                <p className="font-montserrat text-xs mt-1" style={{ color: available ? "#00C8D9" : "#6B7280" }}>
                   {available ? "Disponível →" : "Não disponível"}
                 </p>
               </button>
@@ -133,29 +536,18 @@ export function FarmDetailClient({ farm, models, areaRows, docNumbers, docFiles,
         const label = activeTab === 1 ? "3D" : "2D";
         return (
           <div className="animate-slide-up">
-            <h2 className="font-orbitron font-semibold text-sm uppercase tracking-widest mb-5" style={{ color: "#00E1FF" }}>
+            <h2 className="font-orbitron font-semibold text-sm uppercase tracking-widest mb-5" style={{ color: "#00C8D9" }}>
               Modelo {label} — {model?.title || "Visualização"}
             </h2>
             {model ? (
               <div>
                 <div
                   className="rounded-lg overflow-hidden mb-3"
-                  style={{ border: "1px solid rgba(0,225,255,0.2)", aspectRatio: "16/9", background: "#0D1E2C" }}
+                  style={{ border: "1px solid rgba(0,200,217,0.2)", aspectRatio: "16/9", background: "#111820" }}
                 >
-                  <iframe
-                    src={model.cesium_url}
-                    className="w-full h-full"
-                    allowFullScreen
-                    title={`Modelo ${label}`}
-                    style={{ border: "none" }}
-                  />
+                  <iframe src={model.cesium_url} className="w-full h-full" allowFullScreen title={`Modelo ${label}`} style={{ border: "none" }} />
                 </div>
-                <a
-                  href={model.cesium_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn-atlas-outline inline-flex items-center gap-2"
-                >
+                <a href={model.cesium_url} target="_blank" rel="noopener noreferrer" className="btn-atlas-outline inline-flex items-center gap-2">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
                     <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
@@ -165,7 +557,7 @@ export function FarmDetailClient({ farm, models, areaRows, docNumbers, docFiles,
               </div>
             ) : (
               <div className="atlas-card p-12 text-center">
-                <p className="font-montserrat text-sm" style={{ color: "#8BA3B5" }}>
+                <p className="font-montserrat text-sm" style={{ color: "#6B7280" }}>
                   Modelo {label} não disponível ainda.
                 </p>
               </div>
@@ -177,60 +569,43 @@ export function FarmDetailClient({ farm, models, areaRows, docNumbers, docFiles,
       {/* ── Tab 3: Quadro de Áreas ─────────────────────────────────────── */}
       {activeTab === 3 && (
         <div className="animate-slide-up">
-          <h2 className="font-orbitron font-semibold text-sm uppercase tracking-widest mb-5" style={{ color: "#00E1FF" }}>
+          <h2 className="font-orbitron font-semibold text-sm uppercase tracking-widest mb-5" style={{ color: "#00C8D9" }}>
             Quadro de Áreas
           </h2>
           {areaRows.length > 0 ? (
             <>
-              {/* Cards de resumo */}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
                 <div className="atlas-card p-4 text-center">
-                  <p className="font-orbitron font-bold text-xl" style={{ color: "#FFA23A" }}>
-                    {formatHa(farm.total_area_ha)}
-                  </p>
-                  <p className="font-montserrat text-xs uppercase tracking-widest mt-1" style={{ color: "#8BA3B5" }}>
-                    hectares total
-                  </p>
+                  <p className="font-orbitron font-bold text-xl" style={{ color: "#FF8C42" }}>{formatHa(farm.total_area_ha)}</p>
+                  <p className="font-montserrat text-xs uppercase tracking-widest mt-1" style={{ color: "#6B7280" }}>hectares total</p>
                 </div>
                 <div className="atlas-card p-4 text-center">
-                  <p className="font-orbitron font-bold text-xl" style={{ color: "#FFA23A" }}>
-                    {formatAlq(farm.total_area_alq)}
-                  </p>
-                  <p className="font-montserrat text-xs uppercase tracking-widest mt-1" style={{ color: "#8BA3B5" }}>
-                    alqueires total
-                  </p>
+                  <p className="font-orbitron font-bold text-xl" style={{ color: "#FF8C42" }}>{formatAlq(farm.total_area_alq)}</p>
+                  <p className="font-montserrat text-xs uppercase tracking-widest mt-1" style={{ color: "#6B7280" }}>alqueires total</p>
                 </div>
                 <div className="atlas-card p-4 text-center">
-                  <p className="font-orbitron font-bold text-xl" style={{ color: "#00E1FF" }}>
-                    {areaRows.length}
-                  </p>
-                  <p className="font-montserrat text-xs uppercase tracking-widest mt-1" style={{ color: "#8BA3B5" }}>
-                    classes
-                  </p>
+                  <p className="font-orbitron font-bold text-xl" style={{ color: "#00C8D9" }}>{areaRows.length}</p>
+                  <p className="font-montserrat text-xs uppercase tracking-widest mt-1" style={{ color: "#6B7280" }}>classes</p>
                 </div>
               </div>
-
               <div className="atlas-card overflow-hidden">
                 <div className="table-wrap">
                   <table className="atlas-table">
                     <thead><tr>
-                      <th>Classe / Categoria</th>
-                      <th>Área (ha)</th>
-                      <th>Área (alq)</th>
-                      <th>%</th>
+                      <th>Classe / Categoria</th><th>Área (ha)</th><th>Área (alq)</th><th>%</th>
                     </tr></thead>
                     <tbody>
                       {areaRows.map((row: any) => (
                         <tr key={row.id}>
-                          <td style={{ color: "#F2F2F2" }}>{row.class_name}</td>
-                          <td style={{ color: "#FFA23A" }}>{formatHa(row.area_ha)}</td>
-                          <td style={{ color: "#8BA3B5" }}>{formatAlq(row.area_alq)}</td>
+                          <td style={{ color: "#FFFFFF" }}>{row.class_name}</td>
+                          <td style={{ color: "#FF8C42" }}>{formatHa(row.area_ha)}</td>
+                          <td style={{ color: "#6B7280" }}>{formatAlq(row.area_alq)}</td>
                           <td>
                             <div className="flex items-center gap-2">
-                              <div className="h-1.5 rounded-full flex-1 max-w-16" style={{ background: "rgba(0,225,255,0.1)" }}>
-                                <div className="h-full rounded-full" style={{ width: `${Math.min(row.percentage, 100)}%`, background: "#00E1FF" }}/>
+                              <div className="h-1.5 rounded-full flex-1 max-w-16" style={{ background: "rgba(0,200,217,0.1)" }}>
+                                <div className="h-full rounded-full" style={{ width: `${Math.min(row.percentage, 100)}%`, background: "#00C8D9" }}/>
                               </div>
-                              <span style={{ color: "#00E1FF" }}>{formatPct(row.percentage)}</span>
+                              <span style={{ color: "#00C8D9" }}>{formatPct(row.percentage)}</span>
                             </div>
                           </td>
                         </tr>
@@ -242,9 +617,7 @@ export function FarmDetailClient({ farm, models, areaRows, docNumbers, docFiles,
             </>
           ) : (
             <div className="atlas-card p-12 text-center">
-              <p className="font-montserrat text-sm" style={{ color: "#8BA3B5" }}>
-                Quadro de áreas não disponível ainda.
-              </p>
+              <p className="font-montserrat text-sm" style={{ color: "#6B7280" }}>Quadro de áreas não disponível ainda.</p>
             </div>
           )}
         </div>
@@ -253,10 +626,9 @@ export function FarmDetailClient({ farm, models, areaRows, docNumbers, docFiles,
       {/* ── Tab 4: Documentação ────────────────────────────────────────── */}
       {activeTab === 4 && (
         <div className="animate-slide-up space-y-8">
-          {/* Dados documentais */}
           {docNumbers.length > 0 && (
             <div>
-              <h3 className="font-orbitron font-semibold text-sm uppercase tracking-widest mb-4" style={{ color: "#00E1FF" }}>
+              <h3 className="font-orbitron font-semibold text-sm uppercase tracking-widest mb-4" style={{ color: "#00C8D9" }}>
                 Dados Documentais da Propriedade
               </h3>
               <div className="atlas-card overflow-hidden max-w-lg">
@@ -266,9 +638,10 @@ export function FarmDetailClient({ farm, models, areaRows, docNumbers, docFiles,
                     <tbody>
                       {docNumbers.map((d: any) => (
                         <tr key={d.id}>
-                          <td style={{ color: "#8BA3B5" }}>{DOC_LABELS[d.document_type] || d.document_type}</td>
+                          <td style={{ color: "#6B7280" }}>{DOC_LABELS[d.document_type] || d.document_type}</td>
                           <td>
-                            <code className="font-montserrat text-sm px-2 py-0.5 rounded" style={{ background: "rgba(0,225,255,0.07)", color: "#00E1FF" }}>
+                            <code className="font-montserrat text-sm px-2 py-0.5 rounded"
+                              style={{ background: "rgba(0,200,217,0.07)", color: "#00C8D9" }}>
                               {d.document_number}
                             </code>
                           </td>
@@ -281,10 +654,9 @@ export function FarmDetailClient({ farm, models, areaRows, docNumbers, docFiles,
             </div>
           )}
 
-          {/* Arquivos */}
           {docFiles.length > 0 && (
             <div>
-              <h3 className="font-orbitron font-semibold text-sm uppercase tracking-widest mb-4" style={{ color: "#00E1FF" }}>
+              <h3 className="font-orbitron font-semibold text-sm uppercase tracking-widest mb-4" style={{ color: "#00C8D9" }}>
                 Arquivos dos Documentos
               </h3>
               <div className="space-y-2">
@@ -293,8 +665,9 @@ export function FarmDetailClient({ farm, models, areaRows, docNumbers, docFiles,
                     key={f.id}
                     title={f.title}
                     subtitle={DOC_LABELS[f.document_type] || f.document_type}
-                    onView={() => openFile("farm-documents", f.file_path)}
-                    onDownload={() => downloadFile("farm-documents", f.file_path, f.title + ".pdf")}
+                    onView={() => setPdfViewer({ title: f.title, bucket: "farm-documents", path: f.file_path })}
+                    onDownload={() => handleDownloadPdf(f.id, "farm-documents", f.file_path, f.title)}
+                    downloading={downloading[f.id]}
                   />
                 ))}
               </div>
@@ -303,7 +676,7 @@ export function FarmDetailClient({ farm, models, areaRows, docNumbers, docFiles,
 
           {docNumbers.length === 0 && docFiles.length === 0 && (
             <div className="atlas-card p-12 text-center">
-              <p className="font-montserrat text-sm" style={{ color: "#8BA3B5" }}>Documentação não disponível ainda.</p>
+              <p className="font-montserrat text-sm" style={{ color: "#6B7280" }}>Documentação não disponível ainda.</p>
             </div>
           )}
         </div>
@@ -314,27 +687,16 @@ export function FarmDetailClient({ farm, models, areaRows, docNumbers, docFiles,
         <div className="animate-slide-up space-y-8">
           {images.length > 0 && (
             <div>
-              <h3 className="font-orbitron font-semibold text-sm uppercase tracking-widest mb-4" style={{ color: "#00E1FF" }}>
-                Imagens
+              <h3 className="font-orbitron font-semibold text-sm uppercase tracking-widest mb-4" style={{ color: "#00C8D9" }}>
+                Imagens ({images.length})
               </h3>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                 {images.map((img: any) => (
-                  <div
+                  <ImageCard
                     key={img.id}
-                    className="relative group cursor-pointer rounded overflow-hidden"
-                    style={{ border: "1px solid rgba(0,225,255,0.15)", aspectRatio: "4/3", background: "#0D1E2C" }}
-                    onClick={() => openFile("farm-images", img.file_path)}
-                  >
-                    <div className="absolute inset-0 flex items-center justify-center" style={{ color: "#8BA3B5" }}>
-                      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                        <rect x="3" y="3" width="18" height="18" rx="2"/>
-                        <circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/>
-                      </svg>
-                    </div>
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all">
-                      <span className="font-montserrat text-xs font-600" style={{ color: "#00E1FF" }}>Visualizar</span>
-                    </div>
-                  </div>
+                    img={img}
+                    onOpenLightbox={(url, title) => setLightbox({ url, title })}
+                  />
                 ))}
               </div>
             </div>
@@ -342,7 +704,7 @@ export function FarmDetailClient({ farm, models, areaRows, docNumbers, docFiles,
 
           {videos.length > 0 && (
             <div>
-              <h3 className="font-orbitron font-semibold text-sm uppercase tracking-widest mb-4" style={{ color: "#00E1FF" }}>
+              <h3 className="font-orbitron font-semibold text-sm uppercase tracking-widest mb-4" style={{ color: "#00C8D9" }}>
                 Vídeos
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -361,17 +723,15 @@ export function FarmDetailClient({ farm, models, areaRows, docNumbers, docFiles,
                           />
                         </div>
                       ) : (
-                        <div className="p-4 flex items-center gap-3" style={{ background: "rgba(0,225,255,0.04)" }}>
+                        <div className="p-4 flex items-center gap-3" style={{ background: "rgba(0,200,217,0.04)" }}>
                           <span style={{ color: "#ff0000", fontSize: "24px" }}>▶</span>
-                          <a href={v.video_url} target="_blank" rel="noopener noreferrer" style={{ color: "#00E1FF" }}>
-                            {v.title}
-                          </a>
+                          <a href={v.video_url} target="_blank" rel="noopener noreferrer" style={{ color: "#00C8D9" }}>{v.title}</a>
                         </div>
                       )}
                       <div className="p-3 flex items-center justify-between">
-                        <p className="font-montserrat text-sm font-semibold" style={{ color: "#F2F2F2" }}>{v.title}</p>
+                        <p className="font-montserrat text-sm font-semibold" style={{ color: "#FFFFFF" }}>{v.title}</p>
                         <a href={v.video_url} target="_blank" rel="noopener noreferrer"
-                          className="font-montserrat text-xs font-600" style={{ color: "#00E1FF" }}>
+                          className="font-montserrat text-xs" style={{ color: "#00C8D9" }}>
                           Abrir ↗
                         </a>
                       </div>
@@ -384,7 +744,7 @@ export function FarmDetailClient({ farm, models, areaRows, docNumbers, docFiles,
 
           {images.length === 0 && videos.length === 0 && (
             <div className="atlas-card p-12 text-center">
-              <p className="font-montserrat text-sm" style={{ color: "#8BA3B5" }}>Nenhuma mídia disponível ainda.</p>
+              <p className="font-montserrat text-sm" style={{ color: "#6B7280" }}>Nenhuma mídia disponível ainda.</p>
             </div>
           )}
         </div>
@@ -395,14 +755,18 @@ export function FarmDetailClient({ farm, models, areaRows, docNumbers, docFiles,
         <div className="animate-slide-up space-y-8">
           {mapas.length > 0 && (
             <div>
-              <h3 className="font-orbitron font-semibold text-sm uppercase tracking-widest mb-4" style={{ color: "#FFA23A" }}>
+              <h3 className="font-orbitron font-semibold text-sm uppercase tracking-widest mb-4" style={{ color: "#FF8C42" }}>
                 Mapas do Imóvel
               </h3>
               <div className="space-y-2">
                 {mapas.map((p: any) => (
-                  <PdfItem key={p.id} title={p.title}
-                    onView={() => openFile("farm-documents", p.file_path)}
-                    onDownload={() => downloadFile("farm-documents", p.file_path, p.title + ".pdf")} />
+                  <PdfItem
+                    key={p.id}
+                    title={p.title}
+                    onView={() => setPdfViewer({ title: p.title, bucket: "farm-documents", path: p.file_path })}
+                    onDownload={() => handleDownloadPdf(p.id, "farm-documents", p.file_path, p.title)}
+                    downloading={downloading[p.id]}
+                  />
                 ))}
               </div>
             </div>
@@ -410,14 +774,18 @@ export function FarmDetailClient({ farm, models, areaRows, docNumbers, docFiles,
 
           {relatorios.length > 0 && (
             <div>
-              <h3 className="font-orbitron font-semibold text-sm uppercase tracking-widest mb-4" style={{ color: "#FFA23A" }}>
+              <h3 className="font-orbitron font-semibold text-sm uppercase tracking-widest mb-4" style={{ color: "#FF8C42" }}>
                 Relatórios e Extras
               </h3>
               <div className="space-y-2">
                 {relatorios.map((p: any) => (
-                  <PdfItem key={p.id} title={p.title}
-                    onView={() => openFile("farm-documents", p.file_path)}
-                    onDownload={() => downloadFile("farm-documents", p.file_path, p.title + ".pdf")} />
+                  <PdfItem
+                    key={p.id}
+                    title={p.title}
+                    onView={() => setPdfViewer({ title: p.title, bucket: "farm-documents", path: p.file_path })}
+                    onDownload={() => handleDownloadPdf(p.id, "farm-documents", p.file_path, p.title)}
+                    downloading={downloading[p.id]}
+                  />
                 ))}
               </div>
             </div>
@@ -425,39 +793,11 @@ export function FarmDetailClient({ farm, models, areaRows, docNumbers, docFiles,
 
           {pdfs.length === 0 && (
             <div className="atlas-card p-12 text-center">
-              <p className="font-montserrat text-sm" style={{ color: "#8BA3B5" }}>Nenhum PDF técnico disponível ainda.</p>
+              <p className="font-montserrat text-sm" style={{ color: "#6B7280" }}>Nenhum PDF técnico disponível ainda.</p>
             </div>
           )}
         </div>
       )}
-    </div>
-  );
-}
-
-function PdfItem({ title, subtitle, onView, onDownload }: {
-  title: string; subtitle?: string;
-  onView: () => void; onDownload: () => void;
-}) {
-  return (
-    <div className="flex items-center gap-3 p-4 rounded-lg transition-colors"
-      style={{ background: "rgba(0,225,255,0.03)", border: "1px solid rgba(0,225,255,0.1)" }}>
-      <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
-        style={{ background: "rgba(255,68,68,0.1)", border: "1px solid rgba(255,68,68,0.2)" }}>
-        <span style={{ fontSize: "18px" }}>📄</span>
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="font-montserrat font-semibold text-sm truncate" style={{ color: "#F2F2F2" }}>{title}</p>
-        {subtitle && <p className="font-montserrat text-xs" style={{ color: "#8BA3B5" }}>{subtitle}</p>}
-      </div>
-      <div className="flex gap-2 flex-shrink-0">
-        <button onClick={onView} className="btn-atlas-outline text-xs px-3 py-2">
-          Visualizar
-        </button>
-        <button onClick={onDownload} className="font-montserrat text-xs px-3 py-2 rounded border transition-colors"
-          style={{ color: "#FFA23A", borderColor: "rgba(255,162,58,0.3)" }}>
-          Download
-        </button>
-      </div>
     </div>
   );
 }
