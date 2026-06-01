@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
@@ -13,6 +13,14 @@ const BR_STATES = [
 ];
 
 export default function NewFarmPage() {
+  return (
+    <Suspense fallback={<div className="animate-pulse text-sm" style={{ color: "#8BA3B5" }}>Carregando...</div>}>
+      <NewFarmForm />
+    </Suspense>
+  );
+}
+
+function NewFarmForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const defaultClientId = searchParams.get("client_id") || "";
