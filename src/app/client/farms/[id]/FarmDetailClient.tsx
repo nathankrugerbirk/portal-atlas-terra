@@ -9,11 +9,20 @@ const TABS = [
   "Mapas", "Imagens e Vídeos", "Documentação"
 ];
 
-/* ── Paleta de cores para o gráfico ── */
+/* ── Paleta de cores para o gráfico — tonalidades bem distintas ── */
 const CHART_COLORS = [
-  "#00E6FF","#0099AA","#3DD6F5","#005C77",
-  "#00C4D4","#007799","#4DC8E0","#003D55",
-  "#00B4CC","#006688","#66DFF5","#004466",
+  "#00E6FF", // ciano puro
+  "#0066AA", // azul médio
+  "#00FFCC", // verde-água
+  "#003388", // azul escuro
+  "#44DDFF", // ciano claro
+  "#0044CC", // azul royal
+  "#00AA88", // verde-mar
+  "#5599FF", // azul lavanda
+  "#009977", // verde petróleo
+  "#0088DD", // azul celeste
+  "#00CC99", // esmeralda
+  "#2255BB", // índigo
 ];
 
 /* ── Gráfico de pizza SVG ── */
@@ -110,15 +119,19 @@ async function triggerDownload(bucket: string, path: string, filename: string) {
 }
 
 /* ─── Componente: thumbnail de imagem ──────────────────────────────── */
-function ImageCard({ img, onOpenLightbox }: {
+function ImageCard({ img, onOpenLightbox, onUrlReady }: {
   img: any;
-  onOpenLightbox: (url: string, title: string) => void;
+  onOpenLightbox: (url: string) => void;
+  onUrlReady?: (url: string) => void;
 }) {
   const [thumbUrl, setThumbUrl] = useState<string | null>(null);
   const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
-    fetchSignedUrl("farm-images", img.file_path).then(setThumbUrl);
+    fetchSignedUrl("farm-images", img.file_path).then((url) => {
+      setThumbUrl(url);
+      if (url && onUrlReady) onUrlReady(url);
+    });
   }, [img.file_path]);
 
   async function handleDownload(e: React.MouseEvent) {
@@ -145,7 +158,7 @@ function ImageCard({ img, onOpenLightbox }: {
             src={thumbUrl}
             alt={img.title || "Imagem"}
             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-            onClick={() => onOpenLightbox(thumbUrl, img.title || "Imagem")}
+            onClick={() => onOpenLightbox(thumbUrl)}
           />
 
           {/* Overlay hover */}
@@ -155,7 +168,7 @@ function ImageCard({ img, onOpenLightbox }: {
           >
             {/* Botão visualizar */}
             <button
-              onClick={() => onOpenLightbox(thumbUrl, img.title || "Imagem")}
+              onClick={() => onOpenLightbox(thumbUrl)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded font-montserrat text-xs font-600 transition-all"
               style={{
                 background: "rgba(0,200,217,0.15)",
@@ -214,30 +227,54 @@ function ImageCard({ img, onOpenLightbox }: {
   );
 }
 
-/* ─── Lightbox de imagem ────────────────────────────────────────────── */
-function ImageLightbox({ url, title, onClose }: { url: string; title: string; onClose: () => void }) {
-  const containerRef = useRef<HTMLDivElement>(null);
+/* ─── Lightbox de imagem com navegação ─────────────────────────────── */
+function ImageLightbox({
+  images, currentIndex, onClose, onNavigate,
+}: {
+  images: { url: string; title: string }[];
+  currentIndex: number;
+  onClose: () => void;
+  onNavigate: (index: number) => void;
+}) {
+  const current = images[currentIndex];
+  const hasPrev = currentIndex > 0;
+  const hasNext = currentIndex < images.length - 1;
 
   useEffect(() => {
-    containerRef.current?.focus();
-  }, []);
+    function handler(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+      if (e.key === "ArrowLeft" && hasPrev) onNavigate(currentIndex - 1);
+      if (e.key === "ArrowRight" && hasNext) onNavigate(currentIndex + 1);
+    }
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [currentIndex, hasPrev, hasNext, onClose, onNavigate]);
+
+  if (!current) return null;
 
   return (
     <div
-      ref={containerRef}
-      tabIndex={-1}
-      onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
       className="fixed inset-0 z-50 flex items-center justify-center p-4 outline-none"
-      style={{ background: "rgba(6,14,24,0.96)", backdropFilter: "blur(8px)" }}
+      style={{ background: "rgba(6,14,24,0.97)", backdropFilter: "blur(10px)" }}
       onClick={onClose}
     >
       <div
-        className="relative max-w-5xl w-full animate-fade-in"
+        className="relative w-full animate-fade-in"
+        style={{ maxWidth: "90vw" }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center justify-between mb-3">
-          <p className="font-montserrat text-sm font-semibold" style={{ color: "#FFFFFF" }}>{title}</p>
+          <div className="flex items-center gap-3">
+            <p style={{ fontFamily: "var(--font-main)", fontSize: "0.9rem", fontWeight: 600, color: "#F6F8FA" }}>
+              {current.title}
+            </p>
+            {images.length > 1 && (
+              <span style={{ fontFamily: "var(--font-main)", fontSize: "0.7rem", color: "#8B949E", background: "rgba(139,148,158,0.1)", border: "1px solid rgba(139,148,158,0.2)", borderRadius: 4, padding: "2px 8px" }}>
+                {currentIndex + 1} / {images.length}
+              </span>
+            )}
+          </div>
           <button
             onClick={onClose}
             className="flex items-center gap-1.5 font-montserrat text-xs px-3 py-1.5 rounded transition-colors"
@@ -250,21 +287,86 @@ function ImageLightbox({ url, title, onClose }: { url: string; title: string; on
           </button>
         </div>
 
-        {/* Imagem */}
-        <img
-          src={url}
-          alt={title}
-          className="w-full rounded-lg"
-          style={{
-            maxHeight: "80vh",
-            objectFit: "contain",
-            border: "1px solid rgba(0,200,217,0.2)",
-            boxShadow: "0 0 60px rgba(0,200,217,0.08)",
-          }}
-        />
+        {/* Área principal: setas + imagem */}
+        <div className="flex items-center gap-3">
+          {/* Botão anterior */}
+          <button
+            onClick={() => hasPrev && onNavigate(currentIndex - 1)}
+            disabled={!hasPrev}
+            style={{
+              width: 44, height: 44, borderRadius: "50%", flexShrink: 0,
+              background: hasPrev ? "rgba(0,230,255,0.12)" : "rgba(255,255,255,0.04)",
+              border: `1px solid ${hasPrev ? "rgba(0,230,255,0.3)" : "rgba(255,255,255,0.08)"}`,
+              color: hasPrev ? "#00E6FF" : "#3A3F44",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              cursor: hasPrev ? "pointer" : "not-allowed",
+              transition: "all 0.2s",
+            }}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <polyline points="15 18 9 12 15 6"/>
+            </svg>
+          </button>
 
-        <p className="text-center mt-3 font-montserrat text-xs" style={{ color: "rgba(107,114,128,0.5)" }}>
-          Clique fora para fechar · ESC
+          {/* Imagem */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <img
+              key={current.url}
+              src={current.url}
+              alt={current.title}
+              className="w-full rounded-lg animate-fade-in"
+              style={{
+                maxHeight: "78vh",
+                objectFit: "contain",
+                border: "1px solid rgba(0,230,255,0.15)",
+                boxShadow: "0 0 60px rgba(0,230,255,0.06)",
+                display: "block",
+                margin: "0 auto",
+              }}
+            />
+          </div>
+
+          {/* Botão próximo */}
+          <button
+            onClick={() => hasNext && onNavigate(currentIndex + 1)}
+            disabled={!hasNext}
+            style={{
+              width: 44, height: 44, borderRadius: "50%", flexShrink: 0,
+              background: hasNext ? "rgba(0,230,255,0.12)" : "rgba(255,255,255,0.04)",
+              border: `1px solid ${hasNext ? "rgba(0,230,255,0.3)" : "rgba(255,255,255,0.08)"}`,
+              color: hasNext ? "#00E6FF" : "#3A3F44",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              cursor: hasNext ? "pointer" : "not-allowed",
+              transition: "all 0.2s",
+            }}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </button>
+        </div>
+
+        {/* Miniaturas de navegação (se houver mais de 1) */}
+        {images.length > 1 && (
+          <div className="flex justify-center gap-2 mt-4 flex-wrap">
+            {images.map((img, i) => (
+              <button
+                key={i}
+                onClick={() => onNavigate(i)}
+                style={{
+                  width: 8, height: 8, borderRadius: "50%", padding: 0, border: "none",
+                  background: i === currentIndex ? "#00E6FF" : "rgba(139,148,158,0.35)",
+                  cursor: "pointer",
+                  transition: "all 0.2s",
+                  transform: i === currentIndex ? "scale(1.3)" : "scale(1)",
+                }}
+              />
+            ))}
+          </div>
+        )}
+
+        <p className="text-center mt-3" style={{ fontFamily: "var(--font-main)", fontSize: "0.65rem", color: "rgba(139,148,158,0.4)" }}>
+          ← → para navegar · ESC para fechar
         </p>
       </div>
     </div>
@@ -479,8 +581,9 @@ function PdfItem({ title, subtitle, onView, onDownload, downloading }: {
 export function FarmDetailClient({ farm, models, areaRows, docNumbers, docFiles, images, videos, pdfs }: any) {
   const [activeTab, setActiveTab] = useState(0);
 
-  // Lightbox de imagem
-  const [lightbox, setLightbox] = useState<{ url: string; title: string } | null>(null);
+  // Lightbox de imagem com navegação
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [lightboxImages, setLightboxImages] = useState<{ url: string; title: string }[]>([]);
 
   // Visualizador de PDF
   const [pdfViewer, setPdfViewer] = useState<{
@@ -504,12 +607,13 @@ export function FarmDetailClient({ farm, models, areaRows, docNumbers, docFiles,
   return (
     <div className="animate-fade-in">
 
-      {/* Lightbox de imagem */}
-      {lightbox && (
+      {/* Lightbox de imagem com navegação */}
+      {lightboxIndex !== null && lightboxImages.length > 0 && (
         <ImageLightbox
-          url={lightbox.url}
-          title={lightbox.title}
-          onClose={() => setLightbox(null)}
+          images={lightboxImages}
+          currentIndex={lightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+          onNavigate={setLightboxIndex}
         />
       )}
 
@@ -774,19 +878,30 @@ export function FarmDetailClient({ farm, models, areaRows, docNumbers, docFiles,
       )}
 
       {/* ── Tab 4: Imagens e Vídeos ───────────────────────────────────── */}
-      {activeTab === 4 && (
+      {activeTab === 4 && (() => {
+        // Mapa de url resolvida por índice para navegação
+        const resolvedUrls: string[] = new Array(images.length).fill("");
+        return (
         <div className="animate-slide-up space-y-8">
           {images.length > 0 && (
             <div>
-              <h3 className="font-orbitron font-semibold text-sm uppercase tracking-widest mb-4" style={{ color: "#00C8D9" }}>
+              <h3 className="font-orbitron font-semibold text-sm uppercase tracking-widest mb-4" style={{ color: "#00E6FF" }}>
                 Imagens ({images.length})
               </h3>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                {images.map((img: any) => (
+                {images.map((img: any, idx: number) => (
                   <ImageCard
                     key={img.id}
                     img={img}
-                    onOpenLightbox={(url, title) => setLightbox({ url, title })}
+                    onUrlReady={(url) => { resolvedUrls[idx] = url; }}
+                    onOpenLightbox={(url) => {
+                      resolvedUrls[idx] = url;
+                      setLightboxImages(images.map((m: any, j: number) => ({
+                        url: resolvedUrls[j] || url,
+                        title: m.title || `Imagem ${j + 1}`,
+                      })));
+                      setLightboxIndex(idx);
+                    }}
                   />
                 ))}
               </div>
@@ -839,7 +954,8 @@ export function FarmDetailClient({ farm, models, areaRows, docNumbers, docFiles,
             </div>
           )}
         </div>
-      )}
+        );
+      })()}
 
       {/* ── Tab 5: Documentação ───────────────────────────────────────── */}
       {activeTab === 5 && (
@@ -858,10 +974,15 @@ export function FarmDetailClient({ farm, models, areaRows, docNumbers, docFiles,
                         <tr key={d.id}>
                           <td style={{ color: "#6B7280" }}>{DOC_LABELS[d.document_type] || d.document_type}</td>
                           <td>
-                            <code className="font-montserrat text-sm px-2 py-0.5 rounded"
-                              style={{ background: "rgba(0,230,255,0.07)", color: "#00E6FF" }}>
+                            <span style={{
+                              fontFamily: "var(--font-main)",
+                              fontSize: "0.875rem",
+                              fontWeight: 700,
+                              color: "#FFFFFF",
+                              letterSpacing: "0.02em",
+                            }}>
                               {d.document_number}
-                            </code>
+                            </span>
                           </td>
                         </tr>
                       ))}
