@@ -5,9 +5,74 @@ import Link from "next/link";
 import { formatHa, formatAlq, formatPct, getYouTubeId } from "@/lib/utils";
 
 const TABS = [
-  "Visão Geral", "Modelo 3D", "Modelo 2D",
-  "Quadro de Áreas", "Documentação", "Imagens e Vídeos", "PDFs Técnicos"
+  "Visão Geral", "Modelo 3D", "Quadro de Áreas",
+  "Imagens e Vídeos", "Mapas", "Documentação"
 ];
+
+/* ── Paleta de cores para o gráfico ── */
+const CHART_COLORS = [
+  "#00E6FF","#0099AA","#3DD6F5","#005C77",
+  "#00C4D4","#007799","#4DC8E0","#003D55",
+  "#00B4CC","#006688","#66DFF5","#004466",
+];
+
+/* ── Gráfico de pizza SVG ── */
+function PieChart({ rows, totalHa }: { rows: any[]; totalHa: number }) {
+  if (rows.length === 0 || totalHa === 0) return null;
+  const cx = 110; const cy = 110; const r = 90;
+  let currentAngle = -Math.PI / 2;
+  const slices = rows.map((row: any, i: number) => {
+    const pct = (row.area_ha || 0) / totalHa;
+    const angle = pct * 2 * Math.PI;
+    const x1 = cx + r * Math.cos(currentAngle);
+    const y1 = cy + r * Math.sin(currentAngle);
+    currentAngle += angle;
+    const x2 = cx + r * Math.cos(currentAngle);
+    const y2 = cy + r * Math.sin(currentAngle);
+    const largeArc = angle > Math.PI ? 1 : 0;
+    return { x1, y1, x2, y2, largeArc, pct, color: CHART_COLORS[i % CHART_COLORS.length], label: row.class_name, ha: row.area_ha || 0 };
+  });
+  return (
+    <div style={{ marginTop: 28 }}>
+      <h4 style={{ fontFamily: "var(--font-main)", fontSize: "0.72rem", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "#8B949E", marginBottom: 16 }}>
+        Distribuição por Classe
+      </h4>
+      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 28 }}>
+        <svg width="220" height="220" viewBox="0 0 220 220" style={{ flexShrink: 0 }}>
+          <circle cx={cx} cy={cy} r={r + 7} fill="none" stroke="rgba(0,230,255,0.07)" strokeWidth="1" />
+          {slices.map((s, i) => (
+            <g key={i}>
+              <path d={`M ${cx},${cy} L ${s.x1},${s.y1} A ${r},${r} 0 ${s.largeArc},1 ${s.x2},${s.y2} Z`}
+                fill={s.color} opacity="0.88"
+                style={{ filter: `drop-shadow(0 0 3px ${s.color}50)` }} />
+              <path d={`M ${cx},${cy} L ${s.x1},${s.y1} A ${r},${r} 0 ${s.largeArc},1 ${s.x2},${s.y2} Z`}
+                fill="none" stroke="rgba(13,17,23,0.5)" strokeWidth="1.5" />
+            </g>
+          ))}
+          <circle cx={cx} cy={cy} r={r * 0.4} fill="#0D1117" />
+          <circle cx={cx} cy={cy} r={r * 0.4} fill="none" stroke="rgba(0,230,255,0.1)" strokeWidth="1" />
+          <text x={cx} y={cy - 7} textAnchor="middle" fill="#00E6FF"
+            style={{ fontFamily: "var(--font-main)", fontSize: "12px", fontWeight: 700 }}>{rows.length}</text>
+          <text x={cx} y={cy + 9} textAnchor="middle" fill="#8B949E"
+            style={{ fontFamily: "var(--font-main)", fontSize: "8px", letterSpacing: "0.08em" }}>CLASSES</text>
+        </svg>
+        <div style={{ flex: 1, minWidth: 150, display: "flex", flexDirection: "column", gap: 7 }}>
+          {slices.map((s, i) => (
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: 9 }}>
+              <div style={{ width: 9, height: 9, borderRadius: "50%", background: s.color, flexShrink: 0, boxShadow: `0 0 5px ${s.color}60` }} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontFamily: "var(--font-main)", fontSize: "0.8rem", color: "#F6F8FA", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.label}</p>
+                <p style={{ fontFamily: "var(--font-main)", fontSize: "0.68rem", color: "#8B949E" }}>
+                  {s.ha.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ha · {(s.pct * 100).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const DOC_LABELS: Record<string, string> = {
   matricula: "Matrícula", ccir: "CCIR", cib: "CIB", sigef: "SIGEF", car: "CAR"
@@ -226,9 +291,12 @@ function PdfViewer({ title, onClose, bucket, path }: {
     });
   }, [bucket, path]);
 
+  // ESC via window (funciona mesmo quando o iframe tem foco)
   useEffect(() => {
-    containerRef.current?.focus();
-  }, []);
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onClose]);
 
   async function handleDownload() {
     setDownloading(true);
@@ -513,11 +581,10 @@ export function FarmDetailClient({ farm, models, areaRows, docNumbers, docFiles,
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {[
               { tab: 1, label: "Modelo 3D", available: !!model3d, icon: "🗺️" },
-              { tab: 2, label: "Modelo 2D", available: !!model2d, icon: "📐" },
-              { tab: 3, label: "Quadro de Áreas", available: areaRows.length > 0, icon: "📊" },
-              { tab: 4, label: "Documentação", available: docNumbers.length > 0 || docFiles.length > 0, icon: "📋" },
-              { tab: 5, label: "Imagens e Vídeos", available: images.length > 0 || videos.length > 0, icon: "📸" },
-              { tab: 6, label: "PDFs Técnicos", available: pdfs.length > 0, icon: "📄" },
+              { tab: 2, label: "Quadro de Áreas", available: areaRows.length > 0, icon: "📊" },
+              { tab: 3, label: "Imagens e Vídeos", available: images.length > 0 || videos.length > 0, icon: "📸" },
+              { tab: 4, label: "Mapas", available: pdfs.length > 0, icon: "📄" },
+              { tab: 5, label: "Documentação", available: docNumbers.length > 0 || docFiles.length > 0, icon: "📋" },
             ].map(({ tab, label, available, icon }) => (
               <button
                 key={tab}
@@ -536,44 +603,36 @@ export function FarmDetailClient({ farm, models, areaRows, docNumbers, docFiles,
         </div>
       )}
 
-      {/* ── Tab 1 & 2: Modelos Cesium ─────────────────────────────────── */}
-      {(activeTab === 1 || activeTab === 2) && (() => {
-        const model = activeTab === 1 ? model3d : model2d;
-        const label = activeTab === 1 ? "3D" : "2D";
-        return (
-          <div className="animate-slide-up">
-            <h2 className="font-orbitron font-semibold text-sm uppercase tracking-widest mb-5" style={{ color: "#00C8D9" }}>
-              Modelo {label} — {model?.title || "Visualização"}
-            </h2>
-            {model ? (
-              <div>
-                <div
-                  className="rounded-lg overflow-hidden mb-3"
-                  style={{ border: "1px solid rgba(0,200,217,0.2)", aspectRatio: "16/9", background: "#111820" }}
-                >
-                  <iframe src={model.cesium_url} className="w-full h-full" allowFullScreen title={`Modelo ${label}`} style={{ border: "none" }} />
-                </div>
-                <a href={model.cesium_url} target="_blank" rel="noopener noreferrer" className="btn-atlas-outline inline-flex items-center gap-2">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-                    <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
-                  </svg>
-                  Abrir em tela cheia
-                </a>
+      {/* ── Tab 1: Modelo 3D ──────────────────────────────────────────── */}
+      {activeTab === 1 && (
+        <div className="animate-slide-up">
+          <h2 className="font-orbitron font-semibold text-sm uppercase tracking-widest mb-5" style={{ color: "#00E6FF" }}>
+            Modelo 3D — {model3d?.title || "Visualização"}
+          </h2>
+          {model3d ? (
+            <div>
+              <div className="rounded-lg overflow-hidden mb-3"
+                style={{ border: "1px solid rgba(0,230,255,0.2)", aspectRatio: "16/9", background: "#111820" }}>
+                <iframe src={model3d.cesium_url} className="w-full h-full" allowFullScreen title="Modelo 3D" style={{ border: "none" }} />
               </div>
-            ) : (
-              <div className="atlas-card p-12 text-center">
-                <p className="font-montserrat text-sm" style={{ color: "#6B7280" }}>
-                  Modelo {label} não disponível ainda.
-                </p>
-              </div>
-            )}
-          </div>
-        );
-      })()}
+              <a href={model3d.cesium_url} target="_blank" rel="noopener noreferrer" className="btn-atlas-outline inline-flex items-center gap-2">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                  <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+                </svg>
+                Abrir em tela cheia
+              </a>
+            </div>
+          ) : (
+            <div className="atlas-card p-12 text-center">
+              <p className="font-montserrat text-sm" style={{ color: "#6B7280" }}>Modelo 3D não disponível ainda.</p>
+            </div>
+          )}
+        </div>
+      )}
 
-      {/* ── Tab 3: Quadro de Áreas ─────────────────────────────────────── */}
-      {activeTab === 3 && (() => {
+      {/* ── Tab 2: Quadro de Áreas ─────────────────────────────────────── */}
+      {activeTab === 2 && (() => {
         const totalHa = areaRows.reduce((sum: number, r: any) => sum + (r.area_ha || 0), 0);
         const totalAlq = totalHa / 2.42;
         return (
@@ -658,6 +717,11 @@ export function FarmDetailClient({ farm, models, areaRows, docNumbers, docFiles,
                     </table>
                   </div>
                 </div>
+
+                {/* Gráfico de pizza */}
+                <div className="atlas-card p-5 mt-4">
+                  <PieChart rows={areaRows} totalHa={totalHa} />
+                </div>
               </>
             ) : (
               <div className="atlas-card p-12 text-center">
@@ -668,67 +732,8 @@ export function FarmDetailClient({ farm, models, areaRows, docNumbers, docFiles,
         );
       })()}
 
-      {/* ── Tab 4: Documentação ────────────────────────────────────────── */}
-      {activeTab === 4 && (
-        <div className="animate-slide-up space-y-8">
-          {docNumbers.length > 0 && (
-            <div>
-              <h3 className="font-orbitron font-semibold text-sm uppercase tracking-widest mb-4" style={{ color: "#00C8D9" }}>
-                Dados Documentais da Propriedade
-              </h3>
-              <div className="atlas-card overflow-hidden max-w-lg">
-                <div className="table-wrap">
-                  <table className="atlas-table">
-                    <thead><tr><th>Documento</th><th>Número / Código</th></tr></thead>
-                    <tbody>
-                      {docNumbers.map((d: any) => (
-                        <tr key={d.id}>
-                          <td style={{ color: "#6B7280" }}>{DOC_LABELS[d.document_type] || d.document_type}</td>
-                          <td>
-                            <code className="font-montserrat text-sm px-2 py-0.5 rounded"
-                              style={{ background: "rgba(0,200,217,0.07)", color: "#00C8D9" }}>
-                              {d.document_number}
-                            </code>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {docFiles.length > 0 && (
-            <div>
-              <h3 className="font-orbitron font-semibold text-sm uppercase tracking-widest mb-4" style={{ color: "#00C8D9" }}>
-                Arquivos dos Documentos
-              </h3>
-              <div className="space-y-2">
-                {docFiles.map((f: any) => (
-                  <PdfItem
-                    key={f.id}
-                    title={f.title}
-                    subtitle={DOC_LABELS[f.document_type] || f.document_type}
-                    onView={() => setPdfViewer({ title: f.title, bucket: "farm-documents", path: f.file_path })}
-                    onDownload={() => handleDownloadPdf(f.id, "farm-documents", f.file_path, f.title)}
-                    downloading={downloading[f.id]}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {docNumbers.length === 0 && docFiles.length === 0 && (
-            <div className="atlas-card p-12 text-center">
-              <p className="font-montserrat text-sm" style={{ color: "#6B7280" }}>Documentação não disponível ainda.</p>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ── Tab 5: Imagens e Vídeos ────────────────────────────────────── */}
-      {activeTab === 5 && (
+      {/* ── Tab 3: Imagens e Vídeos ───────────────────────────────────── */}
+      {activeTab === 3 && (
         <div className="animate-slide-up space-y-8">
           {images.length > 0 && (
             <div>
@@ -795,8 +800,8 @@ export function FarmDetailClient({ farm, models, areaRows, docNumbers, docFiles,
         </div>
       )}
 
-      {/* ── Tab 6: PDFs Técnicos ───────────────────────────────────────── */}
-      {activeTab === 6 && (
+      {/* ── Tab 4: Mapas ──────────────────────────────────────────────── */}
+      {activeTab === 4 && (
         <div className="animate-slide-up space-y-8">
           {mapas.length > 0 && (
             <div>
@@ -805,18 +810,14 @@ export function FarmDetailClient({ farm, models, areaRows, docNumbers, docFiles,
               </h3>
               <div className="space-y-2">
                 {mapas.map((p: any) => (
-                  <PdfItem
-                    key={p.id}
-                    title={p.title}
+                  <PdfItem key={p.id} title={p.title}
                     onView={() => setPdfViewer({ title: p.title, bucket: "farm-documents", path: p.file_path })}
                     onDownload={() => handleDownloadPdf(p.id, "farm-documents", p.file_path, p.title)}
-                    downloading={downloading[p.id]}
-                  />
+                    downloading={downloading[p.id]} />
                 ))}
               </div>
             </div>
           )}
-
           {relatorios.length > 0 && (
             <div>
               <h3 className="font-orbitron font-semibold text-sm uppercase tracking-widest mb-4" style={{ color: "#00E6FF" }}>
@@ -824,21 +825,71 @@ export function FarmDetailClient({ farm, models, areaRows, docNumbers, docFiles,
               </h3>
               <div className="space-y-2">
                 {relatorios.map((p: any) => (
-                  <PdfItem
-                    key={p.id}
-                    title={p.title}
+                  <PdfItem key={p.id} title={p.title}
                     onView={() => setPdfViewer({ title: p.title, bucket: "farm-documents", path: p.file_path })}
                     onDownload={() => handleDownloadPdf(p.id, "farm-documents", p.file_path, p.title)}
-                    downloading={downloading[p.id]}
-                  />
+                    downloading={downloading[p.id]} />
                 ))}
               </div>
             </div>
           )}
-
           {pdfs.length === 0 && (
             <div className="atlas-card p-12 text-center">
-              <p className="font-montserrat text-sm" style={{ color: "#6B7280" }}>Nenhum PDF técnico disponível ainda.</p>
+              <p className="font-montserrat text-sm" style={{ color: "#6B7280" }}>Nenhum mapa disponível ainda.</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Tab 5: Documentação ───────────────────────────────────────── */}
+      {activeTab === 5 && (
+        <div className="animate-slide-up space-y-8">
+          {docNumbers.length > 0 && (
+            <div>
+              <h3 className="font-orbitron font-semibold text-sm uppercase tracking-widest mb-4" style={{ color: "#00E6FF" }}>
+                Dados Documentais da Propriedade
+              </h3>
+              <div className="atlas-card overflow-hidden max-w-lg">
+                <div className="table-wrap">
+                  <table className="atlas-table">
+                    <thead><tr><th>Documento</th><th>Número / Código</th></tr></thead>
+                    <tbody>
+                      {docNumbers.map((d: any) => (
+                        <tr key={d.id}>
+                          <td style={{ color: "#6B7280" }}>{DOC_LABELS[d.document_type] || d.document_type}</td>
+                          <td>
+                            <code className="font-montserrat text-sm px-2 py-0.5 rounded"
+                              style={{ background: "rgba(0,230,255,0.07)", color: "#00E6FF" }}>
+                              {d.document_number}
+                            </code>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+          {docFiles.length > 0 && (
+            <div>
+              <h3 className="font-orbitron font-semibold text-sm uppercase tracking-widest mb-4" style={{ color: "#00E6FF" }}>
+                Arquivos dos Documentos
+              </h3>
+              <div className="space-y-2">
+                {docFiles.map((f: any) => (
+                  <PdfItem key={f.id} title={f.title}
+                    subtitle={DOC_LABELS[f.document_type] || f.document_type}
+                    onView={() => setPdfViewer({ title: f.title, bucket: "farm-documents", path: f.file_path })}
+                    onDownload={() => handleDownloadPdf(f.id, "farm-documents", f.file_path, f.title)}
+                    downloading={downloading[f.id]} />
+                ))}
+              </div>
+            </div>
+          )}
+          {docNumbers.length === 0 && docFiles.length === 0 && (
+            <div className="atlas-card p-12 text-center">
+              <p className="font-montserrat text-sm" style={{ color: "#6B7280" }}>Documentação não disponível ainda.</p>
             </div>
           )}
         </div>

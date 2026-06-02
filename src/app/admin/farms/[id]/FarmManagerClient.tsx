@@ -8,8 +8,8 @@ import { ConfirmDeleteModal } from "@/components/shared/ConfirmDeleteModal";
 import { formatHa, formatAlq, haToAlq } from "@/lib/utils";
 
 const SECTION_TABS = [
-  "Dados Principais", "Modelo 3D", "Modelo 2D", "Quadro de Áreas",
-  "Documentação", "Imagens e Vídeos", "PDFs Técnicos"
+  "Dados Principais", "Modelo 3D", "Quadro de Áreas",
+  "Imagens e Vídeos", "Mapas", "Documentação"
 ];
 
 const DOC_TYPES = ["matricula", "ccir", "cib", "sigef", "car"] as const;
@@ -73,6 +73,14 @@ export function FarmManagerClient({ farm, initialModels, initialAreaRows, initia
     if (error) { showToast("Erro ao excluir.", "error"); return; }
     setAreaRows((prev) => prev.filter((r) => r.id !== id));
     showToast("Linha excluída.", "success");
+  }
+
+  async function reorderAreaRows(newOrder: any[]) {
+    setAreaRows(newOrder);
+    // Persiste sort_order no banco
+    for (let i = 0; i < newOrder.length; i++) {
+      await supabase.from("area_table_rows").update({ sort_order: i }).eq("id", newOrder[i].id);
+    }
   }
 
   // ── Upload de arquivos ────────────────────────────────────────────────
@@ -193,47 +201,36 @@ export function FarmManagerClient({ farm, initialModels, initialAreaRows, initia
         ))}
       </div>
 
-      {/* Section 0: Dados Principais */}
+      {/* 0: Dados Principais */}
       {activeTab === 0 && <FarmBasicDataSection farm={farm} supabase={supabase} showToast={showToast} />}
 
-      {/* Section 1: Modelo 3D */}
+      {/* 1: Modelo 3D */}
       {activeTab === 1 && <ModelSection type="3d" model={getModel("3d")} onSave={(u, t) => saveModel("3d", u, t)} />}
 
-      {/* Section 2: Modelo 2D */}
-      {activeTab === 2 && <ModelSection type="2d" model={getModel("2d")} onSave={(u, t) => saveModel("2d", u, t)} />}
+      {/* 2: Quadro de Áreas */}
+      {activeTab === 2 && <AreaTableSection rows={areaRows} onSave={saveAreaRow} onDelete={deleteAreaRow} onReorder={reorderAreaRows} />}
 
-      {/* Section 3: Quadro de Áreas */}
-      {activeTab === 3 && <AreaTableSection rows={areaRows} onSave={saveAreaRow} onDelete={deleteAreaRow} />}
-
-      {/* Section 4: Documentação */}
-      {activeTab === 4 && (
-        <DocumentationSection
-          farmId={farm.id}
-          docNumbers={docNumbers}
-          docFiles={docFiles}
-          supabase={supabase}
-          showToast={showToast}
-          onDocNumbersChange={setDocNumbers}
-          onUpload={uploadDocFile}
-          onDeleteFile={deleteDocFile}
-        />
-      )}
-
-      {/* Section 5: Imagens e Vídeos */}
-      {activeTab === 5 && (
+      {/* 3: Imagens e Vídeos */}
+      {activeTab === 3 && (
         <ImagesVideosSection
-          images={images}
-          videos={videos}
-          onUploadImage={uploadImage}
-          onDeleteImage={deleteImage}
-          onSaveVideo={saveVideo}
-          onDeleteVideo={deleteVideo}
+          images={images} videos={videos}
+          onUploadImage={uploadImage} onDeleteImage={deleteImage}
+          onSaveVideo={saveVideo} onDeleteVideo={deleteVideo}
         />
       )}
 
-      {/* Section 6: PDFs Técnicos */}
-      {activeTab === 6 && (
+      {/* 4: Mapas */}
+      {activeTab === 4 && (
         <PdfsSection pdfs={pdfs} onUpload={uploadPdf} onDelete={deletePdf} />
+      )}
+
+      {/* 5: Documentação */}
+      {activeTab === 5 && (
+        <DocumentationSection
+          farmId={farm.id} docNumbers={docNumbers} docFiles={docFiles}
+          supabase={supabase} showToast={showToast}
+          onDocNumbersChange={setDocNumbers} onUpload={uploadDocFile} onDeleteFile={deleteDocFile}
+        />
       )}
 
       {ToastComponent}
@@ -308,12 +305,98 @@ function ModelSection({ type, model, onSave }: { type: "3d" | "2d"; model: any; 
   );
 }
 
-function AreaTableSection({ rows, onSave, onDelete }: any) {
+/* ── Paleta de cores para o gráfico ── */
+const CHART_COLORS = [
+  "#00E6FF","#0099AA","#3DD6F5","#005C77",
+  "#00C4D4","#007799","#4DC8E0","#003D55",
+  "#00B4CC","#006688","#66DFF5","#004466",
+];
+
+/* ── Componente de gráfico de pizza SVG ── */
+function PieChart({ rows, totalHa }: { rows: any[]; totalHa: number }) {
+  if (rows.length === 0 || totalHa === 0) return null;
+  const cx = 120; const cy = 120; const r = 100;
+  let currentAngle = -Math.PI / 2;
+  const slices = rows.map((row: any, i: number) => {
+    const pct = (row.area_ha || 0) / totalHa;
+    const angle = pct * 2 * Math.PI;
+    const x1 = cx + r * Math.cos(currentAngle);
+    const y1 = cy + r * Math.sin(currentAngle);
+    currentAngle += angle;
+    const x2 = cx + r * Math.cos(currentAngle);
+    const y2 = cy + r * Math.sin(currentAngle);
+    const largeArc = angle > Math.PI ? 1 : 0;
+    const midAngle = currentAngle - angle / 2;
+    return { x1, y1, x2, y2, largeArc, pct, color: CHART_COLORS[i % CHART_COLORS.length], label: row.class_name, midAngle, ha: row.area_ha || 0 };
+  });
+  return (
+    <div style={{ marginTop: 32 }}>
+      <h4 style={{ fontFamily: "var(--font-main)", fontSize: "0.75rem", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "#8B949E", marginBottom: 16 }}>
+        Distribuição por Classe
+      </h4>
+      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 32 }}>
+        {/* Pizza */}
+        <svg width="240" height="240" viewBox="0 0 240 240" style={{ flexShrink: 0 }}>
+          {/* Anel externo decorativo */}
+          <circle cx={cx} cy={cy} r={r + 8} fill="none" stroke="rgba(0,230,255,0.08)" strokeWidth="1" />
+          {slices.map((s, i) => (
+            <g key={i}>
+              <path
+                d={`M ${cx},${cy} L ${s.x1},${s.y1} A ${r},${r} 0 ${s.largeArc},1 ${s.x2},${s.y2} Z`}
+                fill={s.color}
+                opacity="0.9"
+                style={{ filter: `drop-shadow(0 0 4px ${s.color}40)` }}
+              />
+              {/* Borda fina entre fatias */}
+              <path
+                d={`M ${cx},${cy} L ${s.x1},${s.y1} A ${r},${r} 0 ${s.largeArc},1 ${s.x2},${s.y2} Z`}
+                fill="none"
+                stroke="rgba(13,17,23,0.6)"
+                strokeWidth="1.5"
+              />
+            </g>
+          ))}
+          {/* Círculo central (donut) */}
+          <circle cx={cx} cy={cy} r={r * 0.42} fill="#0D1117" />
+          <circle cx={cx} cy={cy} r={r * 0.42} fill="none" stroke="rgba(0,230,255,0.12)" strokeWidth="1" />
+          {/* Texto central */}
+          <text x={cx} y={cy - 8} textAnchor="middle" fill="#00E6FF"
+            style={{ fontFamily: "var(--font-main)", fontSize: "13px", fontWeight: 700 }}>
+            {rows.length}
+          </text>
+          <text x={cx} y={cy + 10} textAnchor="middle" fill="#8B949E"
+            style={{ fontFamily: "var(--font-main)", fontSize: "9px", letterSpacing: "0.08em" }}>
+            CLASSES
+          </text>
+        </svg>
+        {/* Legenda */}
+        <div style={{ flex: 1, minWidth: 160, display: "flex", flexDirection: "column", gap: 8 }}>
+          {slices.map((s, i) => (
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{ width: 10, height: 10, borderRadius: "50%", background: s.color, flexShrink: 0, boxShadow: `0 0 6px ${s.color}60` }} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontFamily: "var(--font-main)", fontSize: "0.8rem", color: "#F6F8FA", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {s.label}
+                </p>
+                <p style={{ fontFamily: "var(--font-main)", fontSize: "0.7rem", color: "#8B949E" }}>
+                  {s.ha.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ha · {(s.pct * 100).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AreaTableSection({ rows, onSave, onDelete, onReorder }: any) {
   const [editingRow, setEditingRow] = useState<any>(null);
   const [showForm, setShowForm] = useState(false);
   const [className, setClassName] = useState("");
   const [areaHaInput, setAreaHaInput] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
 
   // Totais calculados a partir dos dados reais
   const totalHa = rows.reduce((s: number, r: any) => s + (r.area_ha || 0), 0);
@@ -339,6 +422,18 @@ function AreaTableSection({ rows, onSave, onDelete }: any) {
     setAreaHaInput("");
     setEditingRow(null);
   }
+
+  function handleDragStart(i: number) { setDragIndex(i); }
+  function handleDragOver(e: React.DragEvent, i: number) {
+    e.preventDefault();
+    if (dragIndex === null || dragIndex === i) return;
+    const newRows = [...rows];
+    const [moved] = newRows.splice(dragIndex, 1);
+    newRows.splice(i, 0, moved);
+    setDragIndex(i);
+    onReorder(newRows);
+  }
+  function handleDragEnd() { setDragIndex(null); }
 
   async function handleSave() {
     const ha = parseFloat(areaHaInput);
@@ -440,84 +535,101 @@ function AreaTableSection({ rows, onSave, onDelete }: any) {
 
       {/* ── Tabela ── */}
       {rows.length > 0 ? (
-        <div className="atlas-card overflow-hidden">
-          <div className="table-wrap">
-            <table className="atlas-table">
-              <thead>
-                <tr>
-                  <th>Classe / Categoria</th>
-                  <th>Área (ha)</th>
-                  <th>Área (alq)</th>
-                  <th>%</th>
-                  <th>Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((row: any) => {
-                  const alq = (row.area_ha || 0) / 2.42;
-                  const pct = totalHa > 0 ? ((row.area_ha || 0) / totalHa) * 100 : 0;
-                  return (
-                    <tr key={row.id}>
-                      <td style={{ color: "#F6F8FA" }}>{row.class_name}</td>
-                      <td style={{ color: "#00E6FF", fontVariantNumeric: "tabular-nums" }}>
-                        {(row.area_ha || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </td>
-                      <td style={{ color: "#8B949E", fontVariantNumeric: "tabular-nums" }}>
-                        {alq.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </td>
-                      <td>
-                        <div className="flex items-center gap-2">
-                          <div className="h-1.5 rounded-full flex-1 max-w-[60px]" style={{ background: "rgba(0,230,255,0.1)" }}>
-                            <div className="h-full rounded-full" style={{ width: `${Math.min(pct, 100)}%`, background: "#00E6FF" }} />
+        <>
+          <div className="atlas-card overflow-hidden">
+            <div className="table-wrap">
+              <table className="atlas-table">
+                <thead>
+                  <tr>
+                    <th style={{ width: 32 }}></th>
+                    <th>Classe / Categoria</th>
+                    <th>Área (ha)</th>
+                    <th>Área (alq)</th>
+                    <th>%</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((row: any, i: number) => {
+                    const alq = (row.area_ha || 0) / 2.42;
+                    const pct = totalHa > 0 ? ((row.area_ha || 0) / totalHa) * 100 : 0;
+                    const isDragging = dragIndex === i;
+                    return (
+                      <tr
+                        key={row.id}
+                        draggable
+                        onDragStart={() => handleDragStart(i)}
+                        onDragOver={(e) => handleDragOver(e, i)}
+                        onDragEnd={handleDragEnd}
+                        style={{
+                          opacity: isDragging ? 0.5 : 1,
+                          cursor: "grab",
+                          transition: "opacity 0.15s",
+                        }}
+                      >
+                        {/* Handle de arrastar */}
+                        <td style={{ padding: "8px 8px 8px 14px", color: "#3A3F44", cursor: "grab" }}>
+                          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                            <rect x="3" y="3" width="3" height="3" rx="1"/>
+                            <rect x="10" y="3" width="3" height="3" rx="1"/>
+                            <rect x="3" y="9" width="3" height="3" rx="1"/>
+                            <rect x="10" y="9" width="3" height="3" rx="1"/>
+                          </svg>
+                        </td>
+                        <td style={{ color: "#F6F8FA" }}>{row.class_name}</td>
+                        <td style={{ color: "#00E6FF", fontVariantNumeric: "tabular-nums" }}>
+                          {(row.area_ha || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </td>
+                        <td style={{ color: "#8B949E", fontVariantNumeric: "tabular-nums" }}>
+                          {alq.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </td>
+                        <td>
+                          <div className="flex items-center gap-2">
+                            <div className="h-1.5 rounded-full flex-1 max-w-[60px]" style={{ background: "rgba(0,230,255,0.1)" }}>
+                              <div className="h-full rounded-full" style={{ width: `${Math.min(pct, 100)}%`, background: "#00E6FF" }} />
+                            </div>
+                            <span style={{ color: "#00E6FF", fontVariantNumeric: "tabular-nums", minWidth: "42px", fontSize: "0.85rem" }}>
+                              {pct.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%
+                            </span>
                           </div>
-                          <span style={{ color: "#00E6FF", fontVariantNumeric: "tabular-nums", minWidth: "42px", fontSize: "0.85rem" }}>
-                            {pct.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%
-                          </span>
-                        </div>
-                      </td>
-                      <td>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => startEdit(row)}
-                            className="font-montserrat text-xs px-3 py-1 rounded border"
-                            style={{ color: "#00E6FF", borderColor: "rgba(0,230,255,0.3)" }}
-                          >
-                            Editar
-                          </button>
-                          <button
-                            onClick={() => setDeleteTarget(row.id)}
-                            className="font-montserrat text-xs px-3 py-1 rounded border"
-                            style={{ color: "#f85149", borderColor: "rgba(248,81,73,0.3)" }}
-                          >
-                            Excluir
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-              {/* Linha de total */}
-              <tfoot>
-                <tr style={{ borderTop: "1px solid rgba(0,230,255,0.2)", background: "rgba(0,230,255,0.04)" }}>
-                  <td style={{ color: "#F6F8FA", fontWeight: 700, fontSize: "0.78rem", letterSpacing: "0.08em", textTransform: "uppercase", padding: "12px 16px" }}>
-                    Total
-                  </td>
-                  <td style={{ color: "#00E6FF", fontWeight: 700, fontVariantNumeric: "tabular-nums", padding: "12px 16px" }}>
-                    {totalHa.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </td>
-                  <td style={{ color: "#8B949E", fontWeight: 600, fontVariantNumeric: "tabular-nums", padding: "12px 16px" }}>
-                    {totalAlq.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </td>
-                  <td style={{ padding: "12px 16px" }}>
-                    <span style={{ color: "#00E6FF", fontWeight: 700 }}>100,0%</span>
-                  </td>
-                  <td />
-                </tr>
-              </tfoot>
-            </table>
+                        </td>
+                        <td>
+                          <div className="flex gap-2">
+                            <button onClick={() => startEdit(row)} className="font-montserrat text-xs px-3 py-1 rounded border" style={{ color: "#00E6FF", borderColor: "rgba(0,230,255,0.3)" }}>Editar</button>
+                            <button onClick={() => setDeleteTarget(row.id)} className="font-montserrat text-xs px-3 py-1 rounded border" style={{ color: "#f85149", borderColor: "rgba(248,81,73,0.3)" }}>Excluir</button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+                <tfoot>
+                  <tr style={{ borderTop: "1px solid rgba(0,230,255,0.2)", background: "rgba(0,230,255,0.04)" }}>
+                    <td />
+                    <td style={{ color: "#F6F8FA", fontWeight: 700, fontSize: "0.78rem", letterSpacing: "0.08em", textTransform: "uppercase", padding: "12px 16px" }}>Total</td>
+                    <td style={{ color: "#00E6FF", fontWeight: 700, fontVariantNumeric: "tabular-nums", padding: "12px 16px" }}>
+                      {totalHa.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </td>
+                    <td style={{ color: "#8B949E", fontWeight: 600, fontVariantNumeric: "tabular-nums", padding: "12px 16px" }}>
+                      {totalAlq.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </td>
+                    <td style={{ padding: "12px 16px" }}><span style={{ color: "#00E6FF", fontWeight: 700 }}>100,0%</span></td>
+                    <td />
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
           </div>
-        </div>
+
+          {/* Gráfico de pizza */}
+          <div className="atlas-card p-5 mt-4">
+            <PieChart rows={rows} totalHa={totalHa} />
+          </div>
+
+          <p style={{ fontFamily: "var(--font-main)", fontSize: "0.7rem", color: "rgba(139,148,158,0.5)", marginTop: 8, letterSpacing: "0.04em" }}>
+            ↕ Arraste as linhas para reordenar
+          </p>
+        </>
       ) : (
         <div className="atlas-card p-8 text-center font-montserrat text-sm" style={{ color: "#8B949E" }}>
           Nenhuma linha cadastrada. Clique em "+ Adicionar linha" para começar.
