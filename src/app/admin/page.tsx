@@ -1,4 +1,4 @@
-﻿import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { StatCard } from "@/components/admin/StatCard";
 import { formatDate } from "@/lib/utils";
@@ -9,10 +9,12 @@ export default async function AdminDashboard() {
   const [
     { count: clientCount },
     { count: farmCount },
+    { data: farmsArea },
     { data: recentFarms },
   ] = await Promise.all([
     supabase.from("clients").select("*", { count: "exact", head: true }),
     supabase.from("farms").select("*", { count: "exact", head: true }),
+    supabase.from("farms").select("total_area_ha"),
     supabase
       .from("farms")
       .select("id, name, city, state, created_at, clients(profiles(name))")
@@ -20,20 +22,29 @@ export default async function AdminDashboard() {
       .limit(5),
   ]);
 
+  const totalAreaHa = (farmsArea ?? []).reduce(
+    (sum: number, f: any) => sum + (f.total_area_ha || 0),
+    0
+  );
+  const formattedArea = totalAreaHa.toLocaleString("pt-BR", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  });
+
   return (
     <div className="animate-fade-in">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="font-orbitron font-bold text-2xl mb-1" style={{ color: "#F2F2F2" }}>
+        <h1 className="font-orbitron font-bold text-2xl mb-1" style={{ color: "#F6F8FA" }}>
           Dashboard
         </h1>
-        <p className="font-montserrat text-sm" style={{ color: "#8BA3B5" }}>
+        <p className="font-montserrat text-sm" style={{ color: "#8B949E" }}>
           Visão geral da plataforma Atlas Terra
         </p>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
         <StatCard
           label="Total de Clientes"
           value={clientCount ?? 0}
@@ -57,18 +68,30 @@ export default async function AdminDashboard() {
             </svg>
           }
         />
+        <StatCard
+          label="Área Monitorada (ha)"
+          value={formattedArea}
+          accent="cyan"
+          icon={
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M3 3h18v18H3z" rx="1"/>
+              <path d="M9 3v18M15 3v18M3 9h18M3 15h18"/>
+              <circle cx="12" cy="12" r="3" fill="currentColor" fillOpacity="0.3"/>
+            </svg>
+          }
+        />
       </div>
 
       {/* Atalhos rápidos */}
       <div className="mb-8">
-        <h2 className="font-orbitron font-semibold text-sm mb-4 uppercase tracking-widest" style={{ color: "#00E1FF" }}>
+        <h2 className="font-orbitron font-semibold text-sm mb-4 uppercase tracking-widest" style={{ color: "#00E6FF" }}>
           Ações Rápidas
         </h2>
         <div className="flex flex-wrap gap-3">
           <Link href="/admin/clients/new" className="btn-atlas-primary">
             + Novo Cliente
           </Link>
-          <Link href="/admin/farms/new" className="btn-atlas-copper">
+          <Link href="/admin/farms/new" className="btn-atlas-primary">
             + Nova Fazenda
           </Link>
         </div>
@@ -77,13 +100,13 @@ export default async function AdminDashboard() {
       {/* Últimas fazendas */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-orbitron font-semibold text-sm uppercase tracking-widest" style={{ color: "#00E1FF" }}>
+          <h2 className="font-orbitron font-semibold text-sm uppercase tracking-widest" style={{ color: "#00E6FF" }}>
             Últimas Fazendas Cadastradas
           </h2>
           <Link
             href="/admin/farms"
-            className="font-montserrat text-xs font-600 hover:opacity-80 transition-opacity"
-            style={{ color: "#00E1FF" }}
+            className="font-montserrat text-xs hover:opacity-80 transition-opacity"
+            style={{ color: "#00E6FF" }}
           >
             Ver todas →
           </Link>
@@ -105,21 +128,21 @@ export default async function AdminDashboard() {
                 <tbody>
                   {recentFarms.map((farm: any) => (
                     <tr key={farm.id}>
-                      <td className="font-semibold" style={{ color: "#F2F2F2" }}>
+                      <td className="font-semibold" style={{ color: "#F6F8FA" }}>
                         {farm.name}
                       </td>
-                      <td style={{ color: "#8BA3B5" }}>
+                      <td style={{ color: "#8B949E" }}>
                         {(farm.clients as any)?.profiles?.name ?? "—"}
                       </td>
-                      <td style={{ color: "#8BA3B5" }}>
+                      <td style={{ color: "#8B949E" }}>
                         {farm.city}, {farm.state}
                       </td>
-                      <td style={{ color: "#8BA3B5" }}>{formatDate(farm.created_at)}</td>
+                      <td style={{ color: "#8B949E" }}>{formatDate(farm.created_at)}</td>
                       <td>
                         <Link
                           href={`/admin/farms/${farm.id}`}
-                          className="font-montserrat text-xs font-600"
-                          style={{ color: "#00E1FF" }}
+                          className="font-montserrat text-xs"
+                          style={{ color: "#00E6FF" }}
                         >
                           Gerenciar →
                         </Link>
@@ -133,10 +156,10 @@ export default async function AdminDashboard() {
         ) : (
           <div
             className="atlas-card p-8 text-center font-montserrat text-sm"
-            style={{ color: "#8BA3B5" }}
+            style={{ color: "#8B949E" }}
           >
             Nenhuma fazenda cadastrada ainda.{" "}
-            <Link href="/admin/farms/new" style={{ color: "#00E1FF" }}>
+            <Link href="/admin/farms/new" style={{ color: "#00E6FF" }}>
               Criar primeira fazenda
             </Link>
           </div>
@@ -145,4 +168,3 @@ export default async function AdminDashboard() {
     </div>
   );
 }
-

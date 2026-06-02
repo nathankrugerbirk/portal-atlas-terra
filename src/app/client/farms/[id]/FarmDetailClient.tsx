@@ -6,7 +6,7 @@ import { formatHa, formatAlq, formatPct, getYouTubeId } from "@/lib/utils";
 
 const TABS = [
   "Visão Geral", "Modelo 3D", "Quadro de Áreas",
-  "Imagens e Vídeos", "Mapas", "Documentação"
+  "Mapas", "Imagens e Vídeos", "Documentação"
 ];
 
 /* ── Paleta de cores para o gráfico ── */
@@ -582,8 +582,8 @@ export function FarmDetailClient({ farm, models, areaRows, docNumbers, docFiles,
             {[
               { tab: 1, label: "Modelo 3D", available: !!model3d, icon: "🗺️" },
               { tab: 2, label: "Quadro de Áreas", available: areaRows.length > 0, icon: "📊" },
-              { tab: 3, label: "Imagens e Vídeos", available: images.length > 0 || videos.length > 0, icon: "📸" },
-              { tab: 4, label: "Mapas", available: pdfs.length > 0, icon: "📄" },
+              { tab: 3, label: "Mapas", available: pdfs.length > 0, icon: "📄" },
+              { tab: 4, label: "Imagens e Vídeos", available: images.length > 0 || videos.length > 0, icon: "📸" },
               { tab: 5, label: "Documentação", available: docNumbers.length > 0 || docFiles.length > 0, icon: "📋" },
             ].map(({ tab, label, available, icon }) => (
               <button
@@ -732,8 +732,49 @@ export function FarmDetailClient({ farm, models, areaRows, docNumbers, docFiles,
         );
       })()}
 
-      {/* ── Tab 3: Imagens e Vídeos ───────────────────────────────────── */}
+      {/* ── Tab 3: Mapas ──────────────────────────────────────────────── */}
       {activeTab === 3 && (
+        <div className="animate-slide-up space-y-8">
+          {mapas.length > 0 && (
+            <div>
+              <h3 className="font-orbitron font-semibold text-sm uppercase tracking-widest mb-4" style={{ color: "#00E6FF" }}>
+                Mapas do Imóvel
+              </h3>
+              <div className="space-y-2">
+                {mapas.map((p: any) => (
+                  <PdfItem key={p.id} title={p.title}
+                    onView={() => setPdfViewer({ title: p.title, bucket: "farm-documents", path: p.file_path })}
+                    onDownload={() => handleDownloadPdf(p.id, "farm-documents", p.file_path, p.title)}
+                    downloading={downloading[p.id]} />
+                ))}
+              </div>
+            </div>
+          )}
+          {relatorios.length > 0 && (
+            <div>
+              <h3 className="font-orbitron font-semibold text-sm uppercase tracking-widest mb-4" style={{ color: "#00E6FF" }}>
+                Relatórios e Extras
+              </h3>
+              <div className="space-y-2">
+                {relatorios.map((p: any) => (
+                  <PdfItem key={p.id} title={p.title}
+                    onView={() => setPdfViewer({ title: p.title, bucket: "farm-documents", path: p.file_path })}
+                    onDownload={() => handleDownloadPdf(p.id, "farm-documents", p.file_path, p.title)}
+                    downloading={downloading[p.id]} />
+                ))}
+              </div>
+            </div>
+          )}
+          {pdfs.length === 0 && (
+            <div className="atlas-card p-12 text-center">
+              <p className="font-montserrat text-sm" style={{ color: "#6B7280" }}>Nenhum mapa disponível ainda.</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Tab 4: Imagens e Vídeos ───────────────────────────────────── */}
+      {activeTab === 4 && (
         <div className="animate-slide-up space-y-8">
           {images.length > 0 && (
             <div>
@@ -795,47 +836,6 @@ export function FarmDetailClient({ farm, models, areaRows, docNumbers, docFiles,
           {images.length === 0 && videos.length === 0 && (
             <div className="atlas-card p-12 text-center">
               <p className="font-montserrat text-sm" style={{ color: "#6B7280" }}>Nenhuma mídia disponível ainda.</p>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ── Tab 4: Mapas ──────────────────────────────────────────────── */}
-      {activeTab === 4 && (
-        <div className="animate-slide-up space-y-8">
-          {mapas.length > 0 && (
-            <div>
-              <h3 className="font-orbitron font-semibold text-sm uppercase tracking-widest mb-4" style={{ color: "#00E6FF" }}>
-                Mapas do Imóvel
-              </h3>
-              <div className="space-y-2">
-                {mapas.map((p: any) => (
-                  <PdfItem key={p.id} title={p.title}
-                    onView={() => setPdfViewer({ title: p.title, bucket: "farm-documents", path: p.file_path })}
-                    onDownload={() => handleDownloadPdf(p.id, "farm-documents", p.file_path, p.title)}
-                    downloading={downloading[p.id]} />
-                ))}
-              </div>
-            </div>
-          )}
-          {relatorios.length > 0 && (
-            <div>
-              <h3 className="font-orbitron font-semibold text-sm uppercase tracking-widest mb-4" style={{ color: "#00E6FF" }}>
-                Relatórios e Extras
-              </h3>
-              <div className="space-y-2">
-                {relatorios.map((p: any) => (
-                  <PdfItem key={p.id} title={p.title}
-                    onView={() => setPdfViewer({ title: p.title, bucket: "farm-documents", path: p.file_path })}
-                    onDownload={() => handleDownloadPdf(p.id, "farm-documents", p.file_path, p.title)}
-                    downloading={downloading[p.id]} />
-                ))}
-              </div>
-            </div>
-          )}
-          {pdfs.length === 0 && (
-            <div className="atlas-card p-12 text-center">
-              <p className="font-montserrat text-sm" style={{ color: "#6B7280" }}>Nenhum mapa disponível ainda.</p>
             </div>
           )}
         </div>

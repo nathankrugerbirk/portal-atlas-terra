@@ -9,7 +9,7 @@ import { formatHa, formatAlq, haToAlq } from "@/lib/utils";
 
 const SECTION_TABS = [
   "Dados Principais", "Modelo 3D", "Quadro de Áreas",
-  "Imagens e Vídeos", "Mapas", "Documentação"
+  "Mapas", "Imagens e Vídeos", "Documentação"
 ];
 
 const DOC_TYPES = ["matricula", "ccir", "cib", "sigef", "car"] as const;
@@ -210,18 +210,18 @@ export function FarmManagerClient({ farm, initialModels, initialAreaRows, initia
       {/* 2: Quadro de Áreas */}
       {activeTab === 2 && <AreaTableSection rows={areaRows} onSave={saveAreaRow} onDelete={deleteAreaRow} onReorder={reorderAreaRows} />}
 
-      {/* 3: Imagens e Vídeos */}
+      {/* 3: Mapas */}
       {activeTab === 3 && (
+        <PdfsSection pdfs={pdfs} onUpload={uploadPdf} onDelete={deletePdf} />
+      )}
+
+      {/* 4: Imagens e Vídeos */}
+      {activeTab === 4 && (
         <ImagesVideosSection
           images={images} videos={videos}
           onUploadImage={uploadImage} onDeleteImage={deleteImage}
           onSaveVideo={saveVideo} onDeleteVideo={deleteVideo}
         />
-      )}
-
-      {/* 4: Mapas */}
-      {activeTab === 4 && (
-        <PdfsSection pdfs={pdfs} onUpload={uploadPdf} onDelete={deletePdf} />
       )}
 
       {/* 5: Documentação */}
@@ -244,6 +244,9 @@ function FarmBasicDataSection({ farm, supabase, showToast }: any) {
   const [form, setForm] = useState({ name: farm.name, city: farm.city, state: farm.state,
     total_area_ha: farm.total_area_ha, description: farm.description || "" });
   const [loading, setLoading] = useState(false);
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [coverLoading, setCoverLoading] = useState(false);
+  const [coverPreview, setCoverPreview] = useState<string | null>(null);
 
   async function save(e: React.FormEvent) {
     e.preventDefault(); setLoading(true);
@@ -256,9 +259,62 @@ function FarmBasicDataSection({ farm, supabase, showToast }: any) {
     showToast("Dados salvos!", "success");
   }
 
+  function handleCoverSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0] ?? null;
+    setCoverFile(file);
+    if (file) setCoverPreview(URL.createObjectURL(file));
+  }
+
+  async function saveCover() {
+    if (!coverFile) return;
+    setCoverLoading(true);
+    const ext = coverFile.name.split(".").pop();
+    const path = `covers/${farm.id}/${Date.now()}.${ext}`;
+    const { error: uploadError } = await supabase.storage.from("farm-images").upload(path, coverFile, { upsert: true });
+    if (uploadError) { showToast("Erro no upload da capa.", "error"); setCoverLoading(false); return; }
+    const { error: updateError } = await supabase.from("farms").update({ cover_image_path: path }).eq("id", farm.id);
+    setCoverLoading(false);
+    if (updateError) { showToast("Erro ao salvar capa.", "error"); return; }
+    showToast("Capa atualizada!", "success");
+    setCoverFile(null);
+  }
+
   return (
-    <div className="atlas-card p-6 max-w-lg">
-      <form onSubmit={save} className="space-y-4">
+    <div className="space-y-5 max-w-lg">
+      {/* Capa do card */}
+      <div className="atlas-card p-5">
+        <h4 className="font-orbitron font-semibold text-xs uppercase tracking-widest mb-4" style={{ color: "#00E6FF" }}>
+          Imagem de Capa
+        </h4>
+        {coverPreview && (
+          <div className="mb-3 rounded overflow-hidden" style={{ aspectRatio: "16/7", background: "#0D1117" }}>
+            <img src={coverPreview} alt="Preview da capa" className="w-full h-full object-cover" />
+          </div>
+        )}
+        <div className="flex items-end gap-3 flex-wrap">
+          <div className="flex-1 min-w-0">
+            <label className="atlas-label">Selecionar nova imagem</label>
+            <input type="file" accept="image/*" onChange={handleCoverSelect} className="atlas-input" style={{ paddingTop: "7px" }} />
+          </div>
+          <button
+            onClick={saveCover}
+            disabled={!coverFile || coverLoading}
+            className="btn-atlas-primary flex-shrink-0"
+          >
+            {coverLoading ? "Salvando..." : "Salvar capa"}
+          </button>
+        </div>
+        <p style={{ fontFamily: "var(--font-main)", fontSize: "0.68rem", color: "rgba(139,148,158,0.5)", marginTop: 8 }}>
+          Aparece no card da fazenda na área do cliente. Formatos: JPG, PNG, WEBP.
+        </p>
+      </div>
+
+      {/* Dados da fazenda */}
+      <div className="atlas-card p-6">
+        <h4 className="font-orbitron font-semibold text-xs uppercase tracking-widest mb-4" style={{ color: "#00E6FF" }}>
+          Dados da Propriedade
+        </h4>
+        <form onSubmit={save} className="space-y-4">
         <div><label className="atlas-label">Nome da fazenda</label>
           <input value={form.name} onChange={(e) => setForm(p => ({...p, name: e.target.value}))} className="atlas-input" /></div>
         <div className="grid grid-cols-2 gap-4">
@@ -272,7 +328,8 @@ function FarmBasicDataSection({ farm, supabase, showToast }: any) {
         <div><label className="atlas-label">Descrição</label>
           <textarea value={form.description} onChange={(e) => setForm(p => ({...p, description: e.target.value}))} className="atlas-input resize-none" rows={3} /></div>
         <button type="submit" className="btn-atlas-primary" disabled={loading}>{loading ? "Salvando..." : "Salvar alterações"}</button>
-      </form>
+        </form>
+      </div>
     </div>
   );
 }
