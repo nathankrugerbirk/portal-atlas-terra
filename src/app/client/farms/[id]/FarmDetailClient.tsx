@@ -594,7 +594,7 @@ export function FarmDetailClient({ farm, models, areaRows, docNumbers, docFiles,
   const [downloading, setDownloading] = useState<Record<string, boolean>>({});
 
   const model3d = models.find((m: any) => m.type === "3d");
-  const model2d = models.find((m: any) => m.type === "2d");
+  const webmap = models.find((m: any) => m.type === "webmap");
   const mapas = pdfs.filter((p: any) => p.category === "mapa");
   const relatorios = pdfs.filter((p: any) => p.category === "relatorio");
 
@@ -686,7 +686,7 @@ export function FarmDetailClient({ farm, models, areaRows, docNumbers, docFiles,
             {[
               { tab: 1, label: "Modelo 3D", available: !!model3d, icon: "🗺️" },
               { tab: 2, label: "Quadro de Áreas", available: areaRows.length > 0, icon: "📊" },
-              { tab: 3, label: "Mapas", available: pdfs.length > 0, icon: "📄" },
+              { tab: 3, label: "Mapas", available: !!webmap || pdfs.length > 0, icon: "🗺️" },
               { tab: 4, label: "Imagens e Vídeos", available: images.length > 0 || videos.length > 0, icon: "📸" },
               { tab: 5, label: "Documentação", available: docNumbers.length > 0 || docFiles.length > 0, icon: "📋" },
             ].map(({ tab, label, available, icon }) => (
@@ -838,11 +838,60 @@ export function FarmDetailClient({ farm, models, areaRows, docNumbers, docFiles,
 
       {/* ── Tab 3: Mapas ──────────────────────────────────────────────── */}
       {activeTab === 3 && (
-        <div className="animate-slide-up space-y-8">
+        <div className="animate-slide-up space-y-6">
+
+          {/* Mapa interativo embed */}
+          {webmap && webmap.cesium_url && (
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-orbitron font-semibold text-sm uppercase tracking-widest" style={{ color: "#00E6FF" }}>
+                  {webmap.title || "Mapa Interativo"}
+                </h3>
+                <span style={{ fontFamily: "var(--font-main)", fontSize: "0.65rem", color: "#8B949E", letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                  Use scroll e arrastar para navegar
+                </span>
+              </div>
+              <div
+                className="rounded-lg overflow-hidden"
+                style={{
+                  border: "1px solid rgba(0,230,255,0.2)",
+                  boxShadow: "0 0 30px rgba(0,230,255,0.06)",
+                  height: "520px",
+                  background: "#0D1117",
+                }}
+              >
+                <iframe
+                  src={webmap.cesium_url}
+                  className="w-full h-full"
+                  style={{ border: "none" }}
+                  title={webmap.title || "Mapa Interativo"}
+                  allowFullScreen
+                  loading="lazy"
+                />
+              </div>
+              {/* Barra de ações */}
+              <div className="flex items-center gap-3 mt-2">
+                <a
+                  href={webmap.cesium_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-atlas-outline inline-flex items-center gap-2 text-xs"
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                    <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+                  </svg>
+                  Abrir em tela cheia
+                </a>
+              </div>
+            </div>
+          )}
+
+          {/* PDFs de mapas */}
           {mapas.length > 0 && (
             <div>
               <h3 className="font-orbitron font-semibold text-sm uppercase tracking-widest mb-4" style={{ color: "#00E6FF" }}>
-                Mapas do Imóvel
+                PDFs dos Mapas
               </h3>
               <div className="space-y-2">
                 {mapas.map((p: any) => (
@@ -854,6 +903,7 @@ export function FarmDetailClient({ farm, models, areaRows, docNumbers, docFiles,
               </div>
             </div>
           )}
+
           {relatorios.length > 0 && (
             <div>
               <h3 className="font-orbitron font-semibold text-sm uppercase tracking-widest mb-4" style={{ color: "#00E6FF" }}>
@@ -869,7 +919,8 @@ export function FarmDetailClient({ farm, models, areaRows, docNumbers, docFiles,
               </div>
             </div>
           )}
-          {pdfs.length === 0 && (
+
+          {!webmap && pdfs.length === 0 && (
             <div className="atlas-card p-12 text-center">
               <p className="font-montserrat text-sm" style={{ color: "#6B7280" }}>Nenhum mapa disponível ainda.</p>
             </div>

@@ -212,7 +212,11 @@ export function FarmManagerClient({ farm, initialModels, initialAreaRows, initia
 
       {/* 3: Mapas */}
       {activeTab === 3 && (
-        <PdfsSection pdfs={pdfs} onUpload={uploadPdf} onDelete={deletePdf} />
+        <PdfsSection
+          pdfs={pdfs} onUpload={uploadPdf} onDelete={deletePdf}
+          webmapModel={getModel("webmap")}
+          onSaveWebmap={(url: string, title: string) => saveModel("webmap", url, title)}
+        />
       )}
 
       {/* 4: Imagens e Vídeos */}
@@ -904,11 +908,23 @@ function ImagesVideosSection({ images, videos, onUploadImage, onDeleteImage, onS
   );
 }
 
-function PdfsSection({ pdfs, onUpload, onDelete }: any) {
+function PdfsSection({ pdfs, onUpload, onDelete, webmapModel, onSaveWebmap }: any) {
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState<"mapa" | "relatorio">("mapa");
   const [file, setFile] = useState<File | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<any>(null);
+
+  // Mapa interativo embed
+  const [mapUrl, setMapUrl] = useState(webmapModel?.cesium_url || "");
+  const [mapTitle, setMapTitle] = useState(webmapModel?.title || "Mapa Interativo");
+  const [mapSaving, setMapSaving] = useState(false);
+
+  async function handleSaveMap() {
+    if (!mapUrl.trim()) return;
+    setMapSaving(true);
+    await onSaveWebmap(mapUrl.trim(), mapTitle || "Mapa Interativo");
+    setMapSaving(false);
+  }
 
   const mapas = pdfs.filter((p: any) => p.category === "mapa");
   const relatorios = pdfs.filter((p: any) => p.category === "relatorio");
@@ -935,7 +951,69 @@ function PdfsSection({ pdfs, onUpload, onDelete }: any) {
 
   return (
     <div className="space-y-6">
-      {/* Upload */}
+
+      {/* ── Mapa Interativo Embed ── */}
+      <div className="atlas-card p-5 max-w-2xl">
+        <h3 className="font-orbitron font-semibold text-sm uppercase tracking-widest mb-1" style={{ color: "#00E6FF" }}>
+          Mapa Interativo
+        </h3>
+        <p style={{ fontFamily: "var(--font-main)", fontSize: "0.72rem", color: "#8B949E", marginBottom: 16 }}>
+          Cole aqui o link de incorporação (embed URL) de qualquer plataforma de mapas: Google Maps, QGIS Cloud, MapTiler, ArcGIS Online, Mapbox, etc.
+        </p>
+        <div className="space-y-3">
+          <div>
+            <label className="atlas-label">Título do mapa</label>
+            <input
+              value={mapTitle}
+              onChange={(e) => setMapTitle(e.target.value)}
+              className="atlas-input"
+              placeholder="Ex: Mapa de Solo — Fazenda Santa Cruz"
+            />
+          </div>
+          <div>
+            <label className="atlas-label">URL de Embed</label>
+            <input
+              value={mapUrl}
+              onChange={(e) => setMapUrl(e.target.value)}
+              className="atlas-input"
+              placeholder="https://www.google.com/maps/embed?pb=... ou https://maptiler.com/..."
+            />
+          </div>
+          {/* Preview do mapa se URL preenchida */}
+          {mapUrl && (
+            <div className="rounded-lg overflow-hidden" style={{ border: "1px solid rgba(0,230,255,0.2)", aspectRatio: "16/7", background: "#0D1117" }}>
+              <iframe
+                src={mapUrl}
+                className="w-full h-full"
+                style={{ border: "none" }}
+                title="Preview do mapa"
+                allowFullScreen
+              />
+            </div>
+          )}
+          <div className="flex gap-3 items-center">
+            <button onClick={handleSaveMap} className="btn-atlas-primary" disabled={!mapUrl.trim() || mapSaving}>
+              {mapSaving ? "Salvando..." : webmapModel ? "Atualizar mapa" : "Salvar mapa"}
+            </button>
+            {webmapModel && (
+              <span style={{ fontFamily: "var(--font-main)", fontSize: "0.72rem", color: "#0099AA" }}>
+                ✓ Mapa configurado
+              </span>
+            )}
+          </div>
+        </div>
+        <div className="mt-4 p-3 rounded" style={{ background: "rgba(0,230,255,0.04)", border: "1px solid rgba(0,230,255,0.1)" }}>
+          <p style={{ fontFamily: "var(--font-main)", fontSize: "0.68rem", color: "#8B949E", lineHeight: 1.6 }}>
+            <strong style={{ color: "#00E6FF" }}>Como obter o link de embed:</strong><br/>
+            • <strong>Google Maps:</strong> Compartilhar → Incorporar um mapa → copiar src do &lt;iframe&gt;<br/>
+            • <strong>QGIS Cloud:</strong> Publicar projeto → Share → Embed URL<br/>
+            • <strong>MapTiler / Mapbox:</strong> Share → Embed → copiar URL<br/>
+            • <strong>ArcGIS Online:</strong> Share → Embed in website → copiar URL do iframe
+          </p>
+        </div>
+      </div>
+
+      {/* Upload PDF */}
       <div className="atlas-card p-5 max-w-2xl">
         <h3 className="font-orbitron font-semibold text-sm uppercase tracking-widest mb-4" style={{ color: "#00E1FF" }}>Adicionar PDF</h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
