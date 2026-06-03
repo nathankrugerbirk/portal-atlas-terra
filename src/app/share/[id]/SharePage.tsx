@@ -214,11 +214,11 @@ function Section({ children, delay = 0 }: { children: React.ReactNode; delay?: n
   );
 }
 
-// ── Logo oficial (PNG) ───────────────────────────────────────────────────────
+// ── Logo da página de compartilhamento ───────────────────────────────────────
 function LogoAT() {
   return (
     <img
-      src="/logo-brand.png"
+      src="/logo-share.png"
       alt="Atlas Terra"
       style={{ height: 36, objectFit: "contain", filter: "drop-shadow(0 0 8px rgba(0,230,255,0.15))" }}
     />
