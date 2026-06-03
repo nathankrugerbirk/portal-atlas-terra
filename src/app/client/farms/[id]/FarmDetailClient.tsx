@@ -1095,34 +1095,78 @@ function ShareTab({ farmId, farmName }: { farmId: string; farmName: string }) {
         </a>
       </div>
 
-      {/* Preview visual */}
+      {/* Preview — iframe real + botão de acesso */}
       <div className="atlas-card p-4" style={{ borderColor: "rgba(0,230,255,0.1)" }}>
         <p style={{ fontFamily:"var(--font-main)", fontSize:"0.65rem", fontWeight:600,
           letterSpacing:"0.1em", textTransform:"uppercase", color:"#8B949E", marginBottom:12 }}>
           Preview da página pública
         </p>
+
+        {/* iframe com a página real em escala reduzida */}
         <div style={{
-          background: "#0D1117", borderRadius: 6, padding: "20px 16px",
-          border: "1px solid rgba(0,230,255,0.08)",
+          position: "relative", borderRadius: 8, overflow: "hidden",
+          border: "1px solid rgba(0,230,255,0.15)",
+          height: 340,
+          background: "#0D1117",
         }}>
-          <div style={{ height: 8, width: "60%", background: "rgba(0,230,255,0.15)", borderRadius: 4, marginBottom: 8 }}/>
-          <div style={{ height: 6, width: "40%", background: "rgba(139,148,158,0.2)", borderRadius: 4, marginBottom: 16 }}/>
-          <div style={{ display:"flex", gap:8, marginBottom:12 }}>
-            {[1,2].map(i => (
-              <div key={i} style={{ flex:1, height:52, background:"rgba(0,230,255,0.06)",
-                borderRadius:6, border:"1px solid rgba(0,230,255,0.1)" }}/>
-            ))}
-          </div>
-          <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:6 }}>
-            {[1,2,3].map(i => (
-              <div key={i} style={{ aspectRatio:"4/3", background:"rgba(0,230,255,0.05)",
-                borderRadius:6, border:"1px solid rgba(0,230,255,0.08)" }}/>
-            ))}
-          </div>
+          <iframe
+            src={publicUrl}
+            title="Preview da página pública"
+            style={{
+              width: "200%",
+              height: "200%",
+              border: "none",
+              transform: "scale(0.5)",
+              transformOrigin: "top left",
+              pointerEvents: "none",
+            }}
+            loading="lazy"
+          />
+          {/* Overlay clicável que redireciona para a página */}
+          <a
+            href={publicUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              position: "absolute", inset: 0,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              background: "rgba(13,17,23,0)",
+              transition: "background 0.2s",
+              textDecoration: "none",
+            }}
+            onMouseOver={(e) => (e.currentTarget.style.background = "rgba(13,17,23,0.45)")}
+            onMouseOut={(e) => (e.currentTarget.style.background = "rgba(13,17,23,0)")}
+          >
+            <span style={{
+              fontFamily:"var(--font-main)", fontSize:"0.75rem", fontWeight:700,
+              letterSpacing:"0.1em", textTransform:"uppercase",
+              color:"#00E6FF", background:"rgba(13,17,23,0.85)",
+              border:"1px solid rgba(0,230,255,0.4)", borderRadius:6,
+              padding:"8px 18px", opacity:0,
+              transition:"opacity 0.2s",
+            }}
+              onMouseOver={(e) => (e.currentTarget.style.opacity = "1")}
+              onMouseOut={(e) => (e.currentTarget.style.opacity = "0")}
+            >
+              Abrir página →
+            </span>
+          </a>
         </div>
-        <p style={{ fontFamily:"var(--font-main)", fontSize:"0.65rem", color:"rgba(139,148,158,0.4)", marginTop:8 }}>
-          A página pública mostra: capa, informações gerais, galeria de fotos, vídeos e quadro de áreas.
-        </p>
+
+        {/* Botão de acesso abaixo */}
+        <a
+          href={publicUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="btn-atlas-primary w-full flex items-center justify-center gap-2 mt-3"
+          style={{ textDecoration:"none", textAlign:"center" }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+            <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+          </svg>
+          ACESSAR PREVIEW
+        </a>
       </div>
     </div>
   );

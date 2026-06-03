@@ -214,16 +214,14 @@ function Section({ children, delay = 0 }: { children: React.ReactNode; delay?: n
   );
 }
 
-// ── Logo AT (inline SVG) ─────────────────────────────────────────────────────
+// ── Logo oficial (PNG) ───────────────────────────────────────────────────────
 function LogoAT() {
   return (
-    <svg viewBox="0 0 56 40" xmlns="http://www.w3.org/2000/svg" style={{ height: 28 }}>
-      <polygon points="2,36 12,8 22,36 18,36 12,18 6,36" fill="#00E6FF"/>
-      <polygon points="7.5,27 16.5,27 15,22 9,22" fill="#00E6FF"/>
-      <polygon points="25,14 42,14 42,10 25,10" fill="#F6F8FA"/>
-      <rect x="32" y="14" width="4.5" height="26" fill="#F6F8FA"/>
-      <polygon points="38,10 44,10 44,16" fill="#0D1117"/>
-    </svg>
+    <img
+      src="/logo-brand.png"
+      alt="Atlas Terra"
+      style={{ height: 36, objectFit: "contain", filter: "drop-shadow(0 0 8px rgba(0,230,255,0.15))" }}
+    />
   );
 }
 
@@ -674,7 +672,7 @@ export default function SharePage({ farm, coverUrl, images, videos, areaRows }: 
                     fontWeight:800, color:"#FFFFFF", marginTop:20, marginBottom:16,
                     letterSpacing:"-0.01em",
                   }}>
-                    Interesse nesta propriedade?
+                    Ficou interessado?
                   </h2>
                   <p style={{
                     fontFamily:"'Exo 2',sans-serif", fontSize:"1rem",
