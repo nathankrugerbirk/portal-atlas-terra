@@ -94,7 +94,7 @@ export default async function ShareFarmPage({ params }: { params: { id: string }
       return { id: img.id, title: img.title, url: data?.signedUrl ?? null };
     })
   );
-  const validImages = images.filter((i) => i.url);
+  const validImages = images.filter((i): i is { id: any; title: any; url: string } => i.url !== null);
 
   // Vídeos
   const { data: videos } = await sb
