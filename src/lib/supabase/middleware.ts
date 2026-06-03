@@ -31,17 +31,20 @@ export async function updateSession(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname;
 
+  // Rotas totalmente públicas — sem autenticação (página de compartilhamento)
+  if (pathname.startsWith("/share")) {
+    return supabaseResponse;
+  }
+
   // Rotas públicas — não requer autenticação
   const publicRoutes = ["/login"];
   if (publicRoutes.includes(pathname)) {
     if (user) {
-      // Usuário já logado tentando acessar login → redirecionar
       const { data: profile } = await supabase
         .from("profiles")
         .select("role")
         .eq("auth_user_id", user.id)
         .single();
-
       const dest = profile?.role === "admin" ? "/admin" : "/client";
       return NextResponse.redirect(new URL(dest, request.url));
     }
