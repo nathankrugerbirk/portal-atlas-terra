@@ -3,6 +3,10 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import SharePage from "./SharePage";
 
+// Nunca cachear — sempre buscar dados frescos do banco
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 // Admin client server-side — sem auth de usuário
 function adminClient() {
   return createClient(
